@@ -1,10 +1,6 @@
-import type { ElementType, ForwardedRef } from "react";
+import type { ElementType } from "react";
 import { forwardRef } from "react";
-import type {
-  PolymorphicForwardRefExoticComponent,
-  PolymorphicPropsWithoutRef,
-  PolymorphicPropsWithRef,
-} from "react-polymorphic-types";
+import { PolymorphicRef, PolymorphicComponentPropWithRef } from "../utils";
 import { Box, BoxOwnProps } from "./Box";
 import { BREAKPOINTS, BREAKPOINTS_NAMES } from "./css/theme";
 
@@ -14,38 +10,39 @@ export type InlineOwnProps = Omit<BoxOwnProps, "display"> & {
   collapseBelow?: ResponsiveRangeProps["below"];
 };
 
-export type InlineProps<T extends React.ElementType = typeof DefaultElement> =
-  PolymorphicPropsWithRef<InlineOwnProps, T>;
+export type InlineProps<C extends React.ElementType = typeof DefaultElement> =
+  PolymorphicComponentPropWithRef<C, InlineOwnProps>;
 
-export const Inline: PolymorphicForwardRefExoticComponent<
-  InlineOwnProps,
-  typeof DefaultElement
-> = forwardRef(function Inline<T extends ElementType = typeof DefaultElement>(
-  {
-    as,
-    collapseBelow,
-    ...restProps
-  }: PolymorphicPropsWithoutRef<InlineOwnProps, T>,
-  ref: ForwardedRef<Element>
-) {
-  const Element: ElementType = as || DefaultElement;
-  const [collapseXs, collapseSm, collapseMd] = resolveResponsiveRangeProps({
-    below: collapseBelow,
-  });
-  return (
-    <Box
-      flexDirection={{
-        xs: collapseXs ? "col" : "row",
-        sm: collapseSm ? "col" : "row",
-        md: collapseMd ? "col" : "row",
-      }}
-      {...restProps}
-      as={Element}
-      ref={ref}
-      display="flex"
-    />
-  );
-});
+export type InlineComponent = <
+  C extends React.ElementType = typeof DefaultElement
+>(
+  props: InlineProps<C>
+) => React.ReactNode;
+
+export const Inline: InlineComponent = forwardRef(
+  <C extends React.ElementType = typeof DefaultElement>(
+    { as, collapseBelow, ...rest }: InlineProps<C>,
+    ref: PolymorphicRef<C>
+  ) => {
+    const Element: ElementType = as || DefaultElement;
+    const [collapseXs, collapseSm, collapseMd] = resolveResponsiveRangeProps({
+      below: collapseBelow,
+    });
+    return (
+      <Box
+        flexDirection={{
+          xs: collapseXs ? "col" : "row",
+          sm: collapseSm ? "col" : "row",
+          md: collapseMd ? "col" : "row",
+        }}
+        {...rest}
+        as={Element}
+        ref={ref}
+        display="flex"
+      />
+    );
+  }
+);
 
 export interface ResponsiveRangeProps {
   above?: Exclude<keyof typeof BREAKPOINTS, "2xl">;

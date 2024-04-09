@@ -1,9 +1,9 @@
-import { Box, BoxProps } from "./Box";
+import { Box, BoxOwnProps } from "./Box";
 
 export function ProgressBar({
   percentage,
   ...props
-}: BoxProps & { percentage: string }) {
+}: BoxOwnProps & { percentage: string }) {
   return (
     <Box
       className="w-full rounded-full h-[6px]"

@@ -358,7 +358,12 @@ function AddNewCourseForm({ close }: { close: () => void }) {
       )}
     >
       {({ values, isSubmitting, setFieldValue, submitForm }) => (
-        <Form noValidate>
+        <Form
+          noValidate
+          placeholder={undefined}
+          onPointerEnterCapture={undefined}
+          onPointerLeaveCapture={undefined}
+        >
           <ModalBody>
             <FormField
               required

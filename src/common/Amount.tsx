@@ -10,37 +10,38 @@ const currencies_supported: { [key in CURRENCY_TYPES]: string } = {
   EUR: "€",
 };
 
-export const Amount = React.forwardRef<
-  HTMLSpanElement,
-  TextProps<"span"> & {
-    currency?: CURRENCY_TYPES;
-    amount: number;
-    currencySpacing?: React.ComponentProps<typeof Box>["paddingRight"];
-  }
->(function Amount({ currency, amount, currencySpacing, ...props }, ref) {
-  return (
-    <Text
-      as="span"
-      ref={ref}
-      itemScope
-      itemType="http://schema.org/UnitPriceSpecification"
-      {...props}
-    >
-      {currency ? (
-        <Box
-          as="span"
-          paddingRight={currencySpacing || "1"}
-          itemProp="priceCurrency"
-        >
-          {currencies_supported[currency]}
+type AmountProps = TextProps<"span"> & {
+  currency?: CURRENCY_TYPES;
+  amount: number;
+  currencySpacing?: React.ComponentProps<typeof Box>["paddingRight"];
+};
+
+export const Amount = React.forwardRef<HTMLSpanElement, AmountProps>(
+  function Amount({ currency, amount, currencySpacing, ...props }, ref) {
+    return (
+      <Text
+        as="span"
+        ref={ref}
+        itemScope
+        itemType="http://schema.org/UnitPriceSpecification"
+        {...props}
+      >
+        {currency ? (
+          <Box
+            as="span"
+            paddingRight={currencySpacing || "1"}
+            itemProp="priceCurrency"
+          >
+            {currencies_supported[currency]}
+          </Box>
+        ) : null}
+        <Box itemProp="price" display="inline">
+          <LocalizedNumber number={amount} />
         </Box>
-      ) : null}
-      <Box itemProp="price" display="inline">
-        <LocalizedNumber number={amount} />
-      </Box>
-    </Text>
-  );
-});
+      </Text>
+    );
+  }
+);
 
 export const LocalizedNumber = React.forwardRef<
   HTMLSpanElement,
@@ -56,6 +57,7 @@ export const LocalizedNumber = React.forwardRef<
   );
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useNumberFormatter(options?: Intl.NumberFormatOptions) {
   const formatter = useMemo(
     (newOptions?: Intl.NumberFormatOptions) => {
@@ -72,8 +74,7 @@ export function useNumberFormatter(options?: Intl.NumberFormatOptions) {
           }).format;
         }
         throw new Error("Intl not supported");
-      } catch (e) {
-        const error = e as Error;
+      } catch {
         return (n: number) =>
           fallbackNumberToLocalString(n, maximumFractionDigits);
       }

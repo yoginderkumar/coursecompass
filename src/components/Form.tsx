@@ -219,7 +219,7 @@ type FormTextareaProps = Omit<
 
 export function FormTextArea({
   id,
-  ref,
+  // ref,
   name,
   help,
   label,
@@ -294,7 +294,7 @@ export function InputLabel({
   children,
   fieldId,
   className,
-  secondaryLabel,
+  // secondaryLabel,
   actionLabel,
   ...props
 }: React.DetailedHTMLProps<
@@ -459,6 +459,7 @@ const DateInput = React.forwardRef<HTMLInputElement, DateExtraInputs>(
 
 // wrap formik onSubmit to automatically handle errors
 type TOnSubmit<T> = $PropertyType<FormikConfig<T>, "onSubmit">;
+// eslint-disable-next-line react-refresh/only-export-components
 export function formikOnSubmitWithErrorHandling<T>(
   handleSubmit: TOnSubmit<T>,
   rethrow?: boolean

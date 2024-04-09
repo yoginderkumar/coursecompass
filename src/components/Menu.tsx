@@ -67,7 +67,7 @@ export function Menu({
 
 export function MenuButton(props: React.ComponentProps<typeof Button>) {
   const { toggle } = useMenu();
-  return <Button verticalAlign="middle" {...props} onClick={() => toggle()} />;
+  return <Button {...props} onClick={() => toggle()} />;
 }
 
 export function MenuList({
@@ -132,7 +132,7 @@ export function MenuList({
 }
 
 export function MenuItemHeader({
-  header,
+  //header,
   ...props
 }: React.DetailedHTMLProps<
   React.LiHTMLAttributes<HTMLLIElement>,

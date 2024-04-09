@@ -1,43 +1,27 @@
-import type { ElementType, ForwardedRef } from "react";
+import type { ElementType } from "react";
 import { forwardRef } from "react";
-import type {
-  PolymorphicForwardRefExoticComponent,
-  PolymorphicPropsWithoutRef,
-  PolymorphicPropsWithRef,
-} from "react-polymorphic-types";
 import { TTextStyles } from "../css/text.css";
 import { TColorStyles } from "../css/color.css";
-import { Box } from "../Box";
+import { Box, BoxOwnProps } from "../Box";
+import { PolymorphicComponentPropWithRef, PolymorphicRef } from "../../utils";
 
 const DefaultTextElement = "p";
 
 export type TextOwnProps = TColorStyles & TTextStyles;
 
-export type TextProps<T extends React.ElementType = typeof DefaultTextElement> =
-  PolymorphicPropsWithRef<TextOwnProps, T>;
+export type TextProps<C extends React.ElementType = typeof DefaultTextElement> =
+  PolymorphicComponentPropWithRef<C, BoxOwnProps & TextOwnProps>;
 
-export const Text: PolymorphicForwardRefExoticComponent<
-  TextOwnProps,
-  typeof DefaultTextElement
-> = forwardRef(function Text<T extends ElementType = typeof DefaultTextElement>(
-  { as, ...restProps }: PolymorphicPropsWithoutRef<TextOwnProps, T>,
-  ref: ForwardedRef<Element>
-) {
-  const Element: ElementType = as || DefaultTextElement;
-  return <Box {...restProps} as={Element} ref={ref} />;
-});
+type TextComponent = <C extends React.ElementType = typeof DefaultTextElement>(
+  props: TextProps<C>
+) => React.ReactNode;
 
-const DefaultHeadingElement = "h3";
-
-export const Heading: PolymorphicForwardRefExoticComponent<
-  TextOwnProps,
-  typeof DefaultHeadingElement
-> = forwardRef(function Heading<
-  T extends ElementType = typeof DefaultHeadingElement
->(
-  { as, ...restProps }: PolymorphicPropsWithoutRef<TextOwnProps, T>,
-  ref: ForwardedRef<Element>
-) {
-  const Element: ElementType = as || DefaultHeadingElement;
-  return <Text as={Element} ref={ref} {...restProps} />;
-});
+export const Text: TextComponent = forwardRef(
+  <C extends React.ElementType = typeof DefaultTextElement>(
+    { as, ...restProps }: TextProps<C>,
+    ref?: PolymorphicRef<C>
+  ) => {
+    const Element: ElementType = as || DefaultTextElement;
+    return <Box {...restProps} as={Element} ref={ref} />;
+  }
+);
