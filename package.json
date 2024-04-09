@@ -1,0 +1,50 @@
+{
+  "name": "coursecompass",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vanilla-extract/css": "^1.14.2",
+    "@vanilla-extract/sprinkles": "^1.6.1",
+    "autoprefixer": "^10.4.19",
+    "classnames": "^2.3.2",
+    "date-fns": "2.29.3",
+    "firebase": "9.14.0",
+    "formik": "2.2.9",
+    "generate-colors": "1.4.2",
+    "plural": "1.1.0",
+    "postcss": "^8.4.38",
+    "react": "^18.2.0",
+    "react-aria": "3.20.0",
+    "react-day-picker": "8.3.6",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "2.4.0",
+    "react-polymorphic-types": "2.0.0",
+    "react-router-dom": "^6.22.3",
+    "react-transition-group": "4.4.5",
+    "reactfire": "4.2.2",
+    "tailwindcss": "^3.4.3",
+    "utility-types": "3.10.0",
+    "yup": "0.32.11"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@types/react-transition-group": "^4.4.10",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "@vanilla-extract/vite-plugin": "^4.0.7",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0"
+  }
+}
