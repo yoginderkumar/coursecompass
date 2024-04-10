@@ -62,8 +62,6 @@ export function ProgressBars({ ratings }: { ratings: CourseRatings }) {
       ((numVal / ratings.length) * 100).toFixed(0)
     );
   });
-
-  console.log("rating: ", percentageSummary);
   return (
     <Stack width="full" gap="2">
       {[5, 4, 3, 2, 1].map((i) => (

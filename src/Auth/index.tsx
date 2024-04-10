@@ -37,8 +37,9 @@ export function LoginOrRegisterInModal({
       toast.success("Logged in successfully!!!");
       onClose();
     } catch (e) {
+      const err = e as Error;
       setLoading(false);
-      console.log(e);
+      toast.error(err.message || "Something went wrong!");
     }
   }
 

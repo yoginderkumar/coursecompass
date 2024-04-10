@@ -13,7 +13,7 @@ import {
 import { OrderDateBy, RatingsFilter, useCoursesByCategory } from "../data";
 import { categories, categoryTitlesMapped } from "../common/constants";
 import { ArrowDownIcon, StarIcon } from "../components/Icons";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Amount } from "../common/Amount";
 import { CourseCard } from "../Courses";
 
@@ -28,8 +28,6 @@ const ratingsOptions: Array<{ id: RatingsFilter; title: string }> = [
 ];
 
 export default function AllCoursesPage() {
-  const searchParams = useSearchParams();
-  console.log("searchParam: ", searchParams);
   const { courses, isLoading, params, setFieldValue } = useCoursesByCategory();
   return (
     <Stack gap="8" marginBottom="12">
