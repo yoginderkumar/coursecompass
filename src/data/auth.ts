@@ -1,4 +1,5 @@
 import {
+  Auth,
   GoogleAuthProvider,
   getAdditionalUserInfo,
   getAuth,
@@ -13,7 +14,12 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { useCallback } from "react";
-import { useAuth, useFirestore, useFirestoreDocData, useUser } from "reactfire";
+import {
+  useAuth,
+  useFirestore,
+  useFirestoreDocDataOnce,
+  useUser,
+} from "reactfire";
 import { Optional } from "utility-types";
 
 export type TUser = {
@@ -48,7 +54,7 @@ export function useLoginCredentials() {
       const credentials = await signInWithPopup(auth, provider);
       const isNewUser = getAdditionalUserInfo(credentials)?.isNewUser;
       if (isNewUser) {
-        await createProfile();
+        await createProfile(auth);
         return true;
       }
       return true;
@@ -64,21 +70,22 @@ export function useLoginCredentials() {
 }
 
 export function useCreateProfile() {
-  const { data: authUser } = useUser();
-  const userDoc = useUserDocument(authUser?.uid || "missing");
+  const usersCollection = useUsersCollection();
   return useCallback(
-    async (data?: Optional<TUser>) => {
-      if (!authUser) throw new Error("Please login to create profile");
-      if (authUser) {
+    async (authUser: Auth, data?: Optional<TUser>) => {
+      const { currentUser } = authUser;
+      const userDoc = doc(usersCollection, currentUser?.uid || "missing");
+      if (!currentUser) throw new Error("Please login to create profile");
+      if (currentUser) {
         // update the auth profile
         const userToCreate: TUser = {
-          uid: authUser.uid,
-          name: authUser?.displayName || data?.name || "Unknown",
-          email: authUser?.email || "",
-          displayPicture: authUser?.photoURL,
-          created_at: authUser.metadata?.creationTime,
-          updated_at: authUser.metadata?.lastSignInTime,
-          emailVerified: authUser.emailVerified || false,
+          uid: currentUser.uid,
+          name: currentUser?.displayName || data?.name || "Unknown",
+          email: currentUser?.email || "",
+          displayPicture: currentUser?.photoURL,
+          created_at: currentUser.metadata?.creationTime,
+          updated_at: currentUser.metadata?.lastSignInTime,
+          emailVerified: currentUser.emailVerified || false,
           providerId: "firebase",
         };
         await setDoc(userDoc, {
@@ -86,7 +93,7 @@ export function useCreateProfile() {
         });
       }
     },
-    [authUser, userDoc]
+    [usersCollection]
   );
 }
 
@@ -117,7 +124,7 @@ export async function reloadUserAuth() {
 export function useProfile() {
   const { data: authUser } = useUser();
   const userDoc = useUserDocument(authUser?.uid || "missing");
-  const { data: user } = useFirestoreDocData<TUser>(userDoc, {
+  const { data: user } = useFirestoreDocDataOnce<TUser>(userDoc, {
     idField: "uid",
   });
   const update = useUpdateProfile();
