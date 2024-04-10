@@ -1,5 +1,4 @@
-"use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import classNames from "classnames";
 import { $PropertyType } from "utility-types";
 import {
@@ -18,14 +17,18 @@ import {
   getHours,
   getMinutes,
   getSeconds,
+  readFileAsDataURL,
   setHours,
   setMinutes,
   setSeconds,
 } from "../utils";
-import { CalendarIcon } from "./Icons";
+import { CalendarIcon, CameraIcon, TrashIcon } from "./Icons";
 import { Box } from "./Box";
 import toast from "react-hot-toast";
 import { Stack } from "./Stack";
+import { Modal, ModalBody, ModalFooter, useOverlayTriggerState } from "./Modal";
+import { Button } from "./Button";
+import { Inline } from "./Inline";
 
 type FormFieldProps = Omit<
   React.DetailedHTMLProps<
@@ -491,4 +494,175 @@ export function formikOnSubmitWithErrorHandling<T>(
       }
     }
   };
+}
+
+export function FormImageFileField({
+  label,
+  noMargin,
+  inputField,
+  defaultValue,
+  previewTitle,
+  allowUpdate = true,
+  thumbBorderColor,
+  thumbBorderWidth,
+  onRemove,
+  onSelectionEnd,
+  onSelectionStart,
+  onPreview,
+  ...props
+}: FormFieldProps & {
+  previewTitle?: string;
+  allowUpdate?: boolean;
+  allowDownload?: boolean;
+  inputField?: React.ReactNode;
+  thumbBorderWidth?: React.ComponentProps<typeof Box>["borderWidth"];
+  thumbBorderColor?: React.ComponentProps<typeof Box>["borderColor"];
+  onRemove?: () => void;
+  // Callback to handle the first image selection
+  onSelectionStart?: () => void;
+  onSelectionEnd?: (file: File | undefined) => void;
+  onPreview?: () => void;
+}) {
+  const [fileName, setFileName] = useState<string>("");
+  // we need to keep this state because we want to show outlines on the labels
+  // :focus-within can not be used because the input is outside of the the label
+  // and creating duplicate inputs will not work as well due the how file inputs behave
+  const [, setFileIputFocusState] = useState<boolean>(false);
+  const [dataUrl, setFileDataUrl] = useState<string | undefined>(
+    defaultValue ? String(defaultValue) : undefined
+  );
+  const imagePreviewState = useOverlayTriggerState({ defaultOpen: false });
+  const id = props.id || props.name;
+  return (
+    <FormField
+      {...props}
+      noMargin={noMargin}
+      renderInput={({ field, form }) => {
+        return (
+          <div className="relative">
+            <input
+              accept="image/*"
+              {...props}
+              name={`file_name_${id}`}
+              type="file"
+              id={id}
+              value={fileName}
+              className="opacity-0 absolute top-0 left-0 w-1 h-2"
+              onFocus={() => {
+                setFileIputFocusState(true);
+              }}
+              onBlur={() => {
+                setFileIputFocusState(false);
+                form.setFieldTouched(field.name, true);
+              }}
+              onChange={({ currentTarget: { value, files } }) => {
+                form.setFieldTouched(field.name, true);
+                form.setFieldValue(
+                  field.name,
+                  props.multiple ? files || [] : files ? files[0] : ""
+                );
+                setFileName(value);
+                if (files && files.length) {
+                  onSelectionEnd?.(files[0]);
+                  readFileAsDataURL(files[0]).then((dataUrl) => {
+                    setFileDataUrl(dataUrl as string);
+                  });
+                } else {
+                  setFileDataUrl(undefined);
+                }
+              }}
+            />
+            {!dataUrl ? (
+              <InputLabel
+                fieldId={id}
+                onClick={() => {
+                  onSelectionStart?.();
+                }}
+              >
+                {inputField ? (
+                  inputField
+                ) : (
+                  <Box className="w-fit">
+                    <Inline
+                      gap="3"
+                      borderWidth="1"
+                      rounded="md"
+                      paddingY="2"
+                      paddingX="3"
+                      alignItems="center"
+                      color="textPrimary"
+                      borderColor="borderPrimary"
+                    >
+                      <CameraIcon />
+                      <span>{label || "Select Image"}</span>
+                    </Inline>
+                  </Box>
+                )}
+              </InputLabel>
+            ) : (
+              <div className="flex space-x-4 items-center">
+                <div className="border p-1px rounded overflow-hidden">
+                  <Box
+                    as="img"
+                    src={dataUrl}
+                    alt="Preview"
+                    size="12"
+                    cursor="pointer"
+                    borderWidth={thumbBorderWidth || "1"}
+                    rounded="md"
+                    borderColor={thumbBorderColor || "iconMedium"}
+                    onClick={() => {
+                      imagePreviewState.open();
+                      onPreview?.();
+                    }}
+                  />
+                  <Modal
+                    title={previewTitle || "Bill"}
+                    isOpen={imagePreviewState.isOpen}
+                    onClose={imagePreviewState.close}
+                  >
+                    <ModalBody>
+                      <img
+                        src={dataUrl}
+                        alt="Preview"
+                        className="w-full h-full max-w-full"
+                      />
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button
+                        onClick={imagePreviewState.close}
+                        level="primary"
+                        autoFocus
+                        size="lg"
+                      >
+                        Ok
+                      </Button>
+                    </ModalFooter>
+                  </Modal>
+                </div>
+                <div
+                  className={`flex items-center ${
+                    allowUpdate && "border-l pl-4"
+                  }`}
+                >
+                  <Button
+                    inline
+                    status="danger"
+                    onClick={() => {
+                      form.setFieldValue(field.name, "");
+                      setFileName("");
+                      setFileDataUrl(undefined);
+                      onRemove?.();
+                    }}
+                  >
+                    <TrashIcon /> Delete
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }}
+    />
+  );
 }

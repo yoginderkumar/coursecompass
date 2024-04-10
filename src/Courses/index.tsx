@@ -25,7 +25,7 @@ import {
   useAddNewCourse,
   useAddRatingAndReview,
 } from "../data";
-import { FormTextArea, Textarea } from "../components/Form";
+import { FormImageFileField, FormTextArea, Textarea } from "../components/Form";
 import {
   categories,
   categoryTitlesMapped,
@@ -37,6 +37,7 @@ import { Timestamp } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { Amount } from "../common/Amount";
 import { getCategoryIcon } from "../common";
+import PlaceholderImage from "../assets/images/placeholder.png";
 
 export function CourseBox({
   title,
@@ -57,9 +58,7 @@ export function CourseBox({
   return (
     <Box
       style={{
-        background: thumbnail?.length
-          ? `url(${thumbnail})`
-          : `rgba(${r}, ${g}, ${b}, .8)`,
+        background: `url(${thumbnail || PlaceholderImage})`,
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
       }}
@@ -341,13 +340,16 @@ function AddNewCourseForm({ close }: { close: () => void }) {
         description: "" as string,
         price: 0 as number,
         started_at: new Date() as Date,
-        thumbnail: "" as string | undefined,
+        thumbnail: undefined as File | undefined,
         title: "" as string,
         category: "" as CategoryIds,
       }}
       onSubmit={formikOnSubmitWithErrorHandling(
         async (values, { resetForm }) => {
+          if (!values.thumbnail)
+            throw new Error("Please upload a valid image!");
           await addNewCourse({
+            image: values.thumbnail,
             ...values,
             started_at: Timestamp.fromDate(new Date(values.started_at)),
           });
@@ -357,7 +359,7 @@ function AddNewCourseForm({ close }: { close: () => void }) {
         }
       )}
     >
-      {({ values, isSubmitting, setFieldValue, submitForm }) => (
+      {({ values, isSubmitting, status, setFieldValue, submitForm }) => (
         <Form
           noValidate
           placeholder={undefined}
@@ -417,14 +419,9 @@ function AddNewCourseForm({ close }: { close: () => void }) {
                 placeholder="Enter content url"
                 label="Content URL"
               />
-              <FormField
-                required
-                fullWidth
-                name="thumbnail"
-                placeholder="Enter thumbnail url"
-                label="Thumbnail URL"
-              />
             </Inline>
+            <FormImageFileField name="thumbnail" />
+
             <Inline gap="6">
               <FormField
                 required
@@ -482,6 +479,7 @@ function AddNewCourseForm({ close }: { close: () => void }) {
                 />
               </Inline>
             </Inline>
+            {status ? <Text>Error: {status}</Text> : null}
           </ModalBody>
           <ModalFooter>
             <Button
@@ -551,7 +549,7 @@ export function CourseCard({ course }: { course: Course }) {
         <Box rounded="lg" paddingY="2" paddingX="2" className="h-[42%]">
           <img
             className="rounded-lg h-[180px] w-full object-cover"
-            src={thumbnail}
+            src={thumbnail || PlaceholderImage}
             alt={title}
           />
         </Box>
@@ -570,7 +568,7 @@ export function CourseCard({ course }: { course: Course }) {
               <Amount fontSize="c3" currency={currency} amount={price} />
             </Stack>
           </Inline>
-          <Text fontSize="c1" className="line-clamp-2 mr-4">
+          <Text fontSize="c1" height="8" className="line-clamp-2 mr-4">
             {description}
           </Text>
           <Inline gap="2" alignItems="center">

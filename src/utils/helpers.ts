@@ -81,3 +81,16 @@ export const arrayGroupBy = function (arr: Array<string | number>) {
   });
   return obj;
 };
+
+export async function readFileAsDataURL(file: Blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", function loadedFileInReader(e) {
+      resolve(e.target?.result);
+    });
+    reader.addEventListener("error", function loadedFileInReader(e) {
+      reject(e.target?.result);
+    });
+    reader.readAsDataURL(file);
+  });
+}
