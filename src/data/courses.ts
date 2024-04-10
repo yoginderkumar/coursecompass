@@ -13,8 +13,13 @@ import {
 } from "firebase/firestore";
 import { useFormik } from "formik";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useFirestore, useFirestoreCollectionData } from "reactfire";
+import {
+  useFirestore,
+  useFirestoreCollectionData,
+  useStorage,
+} from "reactfire";
 import { dateToTimestamp } from "../utils";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export type CURRENCY_TYPES = "INR" | "USD" | "EUR";
 
@@ -315,15 +320,27 @@ export function useCoursesForUser() {
 export function useAddNewCourse() {
   const coursesCollection = useCoursesCollection();
   const docRef = doc(coursesCollection);
+  const storage = useStorage();
   return useCallback(
     async ({
+      image,
       ...rest
-    }: Omit<Course, "id" | "updated_at" | "created_at" | "averageRatings">) => {
+    }: Omit<
+      Course,
+      "id" | "thumbnail" | "updated_at" | "created_at" | "averageRatings"
+    > & {
+      image: File;
+    }) => {
       try {
+        if (!image) return null;
+        const storageRef = ref(storage, `images/${docRef.id}/${image.name}`);
+        const { ref: pathRef } = await uploadBytes(storageRef, image);
+        const imageUrl = await getDownloadURL(pathRef);
         await setDoc(docRef, {
+          ...rest,
           id: docRef.id,
           averageRatings: 0,
-          ...rest,
+          thumbnail: `${imageUrl || pathRef.fullPath || image.name}`,
           updated_at: dateToTimestamp(new Date()),
           created_at: dateToTimestamp(new Date()),
         });
@@ -331,6 +348,6 @@ export function useAddNewCourse() {
         throw e as Error;
       }
     },
-    [docRef]
+    [docRef, storage]
   );
 }
