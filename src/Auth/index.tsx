@@ -13,6 +13,9 @@ import {
 } from "../components";
 import { Formik } from "formik";
 import { GoogleIcon, SpinnerIcon } from "../components/Icons";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useSigninCheck } from "reactfire";
+import { queryToSearch } from "../utils";
 
 export function LoginOrRegisterInModal({
   children,
@@ -152,5 +155,40 @@ export function LoginOrRegisterInModal({
         </ModalBody>
       </Modal>
     </>
+  );
+}
+
+export function ProtectedRoutes({
+  redirectTo = "/",
+  children,
+  redirectBack,
+}: {
+  redirectTo?: string;
+  children?: React.ReactNode;
+  redirectBack?: boolean;
+}) {
+  const location = useLocation();
+  const { status, data: signInCheckResult } = useSigninCheck();
+  if (status === "loading") {
+    return (
+      <span>
+        <SpinnerIcon /> Auth Check...
+      </span>
+    );
+  }
+  if (signInCheckResult.signedIn === true) {
+    return <>{children || <Outlet />}</>;
+  }
+  return (
+    <Navigate
+      to={`${redirectTo}${queryToSearch(
+        redirectBack
+          ? {
+              next: location.pathname + location.search,
+            }
+          : {}
+      )}`}
+      replace
+    />
   );
 }

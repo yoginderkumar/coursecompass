@@ -55,7 +55,7 @@ export function Avatar({
   const [r, g, b] = getColorForString(id);
   const [img, setImg] = useState<string | undefined>(image);
   return (
-    <Circle {...rest} style={{ backgroundColor: `rgba(${r}, ${g}, ${b}, 1)` }}>
+    <Circle style={{ backgroundColor: `rgba(${r}, ${g}, ${b}, 1)` }} {...rest}>
       {img?.length ? (
         <img
           src={img}

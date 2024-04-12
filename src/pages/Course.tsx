@@ -5,6 +5,7 @@ import {
   Button,
   DataLoadingFallback,
   Inline,
+  PageMeta,
   Stack,
   Text,
   Time,
@@ -39,117 +40,127 @@ function Course({ courseId }: { courseId: string }) {
   const { reviews, reload: reloadReviews } = useReviews(courseId);
   const { data: user } = useUser();
   return (
-    <Box marginBottom="8">
-      {course?.id ? (
-        <Stack gap="12">
-          <Inline gap="8">
-            <Stack gap="6" className="w-[80%]">
-              <img
-                src={course?.thumbnail}
-                className="rounded-lg h-[320px]  object-cover"
-                alt={course?.title}
-              />
-            </Stack>
-            <Stack paddingRight="6" gap="6" width="full" paddingY="4">
-              <Text as="h5" fontSize="h5" className="line-clamp-2">
-                {course?.title}
-              </Text>
-              {course?.description ? (
-                <Text fontSize="b3" className="line-clamp-5">
-                  {course.description}
+    <>
+      <PageMeta title={course?.title || "Course"} />
+      <Box marginBottom="8">
+        {course?.id ? (
+          <Stack gap="12">
+            <Inline gap="8">
+              <Stack gap="6" className="w-[80%]">
+                <img
+                  src={course?.thumbnail}
+                  className="rounded-lg h-[320px]  object-cover"
+                  alt={course?.title}
+                />
+              </Stack>
+              <Stack paddingRight="6" gap="6" width="full" paddingY="4">
+                <Text as="h5" fontSize="h5" className="line-clamp-2">
+                  {course?.title}
                 </Text>
-              ) : null}
-
-              <Stack gap="1">
-                <Text>
-                  Price :
-                  <Amount
-                    as="span"
-                    className="ml-2"
-                    amount={course.price}
-                    currency={course.currency}
-                  />
-                </Text>
-                <Text>
-                  Language :
-                  <Text as="span" fontSize="b3" className="ml-1">
-                    {getLanguageValue(course?.language || "")}
+                {course?.description ? (
+                  <Text fontSize="b3" className="line-clamp-5">
+                    {course.description}
                   </Text>
-                </Text>
-                <Inline gap="2">
-                  <Text>Category :</Text>
-                  <Inline gap="2" alignItems="center">
-                    {getCategoryIcon({ id: course.category, size: "4" })}
-                    <Text as="span">
-                      {categoryTitlesMapped[course.category]}
+                ) : null}
+
+                <Stack gap="1">
+                  <Text>
+                    Price :
+                    <Amount
+                      as="span"
+                      className="ml-2"
+                      amount={course.price}
+                      currency={course.currency}
+                    />
+                  </Text>
+                  <Text>
+                    Language :
+                    <Text as="span" fontSize="b3" className="ml-1">
+                      {getLanguageValue(course?.language || "")}
                     </Text>
+                  </Text>
+                  <Inline gap="2">
+                    <Text>Category :</Text>
+                    <Inline gap="2" alignItems="center">
+                      {getCategoryIcon({ id: course.category, size: "4" })}
+                      <Text as="span">
+                        {categoryTitlesMapped[course.category]}
+                      </Text>
+                    </Inline>
                   </Inline>
+                </Stack>
+                <Inline fontSize="c1" gap="3">
+                  <Text>By: {course?.author.name}</Text>
+                  <Text>|</Text>
+                  {course?.content_url ? (
+                    <Link to={course.content_url} target="_blank">
+                      <Text className="underline underline-offset-[2px]">
+                        Course Content
+                      </Text>
+                    </Link>
+                  ) : null}
+                  <Text>|</Text>
+
+                  <Text>
+                    Launch Details:{" "}
+                    {course.start?.date ? (
+                      <Time timeStamp={course.start.date} />
+                    ) : (
+                      <Text as="span">
+                        {course.start?.isRecorded ? "Recorded" : "Live"}
+                      </Text>
+                    )}
+                  </Text>
                 </Inline>
               </Stack>
-              <Inline fontSize="c1" gap="3">
-                <Text>By: {course?.creator}</Text>
-                <Text>|</Text>
-                {course?.content_url ? (
-                  <Link to={course.content_url} target="_blank">
-                    <Text className="underline underline-offset-[2px]">
-                      Course Content
-                    </Text>
-                  </Link>
-                ) : null}
-                <Text>|</Text>
-
-                <Text>
-                  Launched at: <Time timeStamp={course.started_at} />
-                </Text>
-              </Inline>
-            </Stack>
-          </Inline>
-          {course.ratings?.length ? (
-            <Suspense fallback="Loader...">
-              <Reviews
-                user={user}
-                reviews={reviews}
-                ratings={course.ratings}
-                averageRating={course.averageRatings}
-              />
-            </Suspense>
-          ) : (
-            <Stack alignItems="center" gap="6">
-              <Stack alignItems="center" gap="3">
-                <Text fontSize="s1" as="h5">
-                  No ratings and reviews yet!
-                </Text>
-                <Text color="textLow">
-                  Be the first one to rate & review this course!
-                </Text>
+            </Inline>
+            {course.ratings?.length ? (
+              <Suspense fallback="Loader...">
+                <Reviews
+                  user={user}
+                  reviews={reviews}
+                  ratings={course.ratings}
+                  averageRating={course.averageRatings}
+                />
+              </Suspense>
+            ) : (
+              <Stack alignItems="center" gap="6">
+                <Stack alignItems="center" gap="3">
+                  <Text fontSize="s1" as="h5">
+                    No ratings and reviews yet!
+                  </Text>
+                  <Text color="textLow">
+                    Be the first one to rate & review this course!
+                  </Text>
+                </Stack>
+                <RateButton
+                  courseId={courseId}
+                  ratings={course?.ratings}
+                  user={user}
+                  onSuccess={() => {
+                    reload();
+                    reloadReviews();
+                  }}
+                />
               </Stack>
-              <RateButton
-                courseId={courseId}
-                ratings={course?.ratings}
-                user={user}
-                onSuccess={() => {
-                  reload();
-                  reloadReviews();
-                }}
-              />
-            </Stack>
-          )}
-        </Stack>
-      ) : null}
-      {course?.ratings?.length ? (
-        <Box position="fixed" bottom="0" right="0" padding="12">
-          <RateButton
-            courseId={courseId}
-            user={user}
-            ratings={course?.ratings}
-            onSuccess={() => {
-              reload();
-              reloadReviews();
-            }}
-          />
-        </Box>
-      ) : null}
-    </Box>
+            )}
+          </Stack>
+        ) : null}
+        {course?.ratings?.length ? (
+          <Box position="fixed" bottom="0" right="0" padding="12">
+            <RateButton
+              courseId={courseId}
+              user={user}
+              ratings={course?.ratings}
+              onSuccess={() => {
+                reload();
+                reloadReviews();
+              }}
+            />
+          </Box>
+        ) : null}
+      </Box>
+    </>
   );
 }
 

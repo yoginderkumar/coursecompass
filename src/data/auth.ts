@@ -22,6 +22,8 @@ import {
 } from "reactfire";
 import { Optional } from "utility-types";
 
+type UserRoles = "admin" | "super_admin";
+
 export type TUser = {
   uid: string;
   name: string;
@@ -32,6 +34,7 @@ export type TUser = {
   emailVerified?: boolean;
   providerId: "firebase";
   roles?: string[];
+  role: UserRoles;
 };
 
 function useUsersCollection() {
@@ -82,6 +85,7 @@ export function useCreateProfile() {
           uid: currentUser.uid,
           name: currentUser?.displayName || data?.name || "Unknown",
           email: currentUser?.email || "",
+          role: "admin",
           displayPicture: currentUser?.photoURL,
           created_at: currentUser.metadata?.creationTime,
           updated_at: currentUser.metadata?.lastSignInTime,
@@ -133,3 +137,57 @@ export function useProfile() {
     update,
   };
 }
+
+export enum USER_PERMISSIONS {
+  ADD_COURSE = "ADD_COURSE",
+  EDIT_COURSE = "EDIT_COURSE",
+  DELETE_COURSE = "DELETE_COURSE",
+  ADD_AUTHOR = "ADD_AUTHOR",
+  EDIT_AUTHOR = "EDIT_AUTHOR",
+  DELETE_AUTHOR = "DELETE_AUTHOR",
+  ADD_CATEGORY = "ADD_CATEGORY",
+  EDIT_CATEGORY = "EDIT_CATEGORY",
+  DELETE_CATEGORY = "DELETE_CATEGORY",
+  MENTION_OTHER_AUTHOR = "MENTION_OTHER_AUTHOR",
+}
+
+export function getRoleDetails(role: UserRoles) {
+  return ROLES_AND_PERMISSIONS[role];
+}
+
+export function checkIfUserCan(
+  role: UserRoles,
+  ...permissions: Array<USER_PERMISSIONS>
+) {
+  const userPermissions: Array<USER_PERMISSIONS> =
+    getRoleDetails(role).permissions;
+  return permissions.every((p) => userPermissions.indexOf(p) !== -1);
+}
+
+const ROLES_AND_PERMISSIONS = {
+  admin: {
+    id: "admin" as const,
+    title: "Admin",
+    permissions: [
+      USER_PERMISSIONS.ADD_COURSE,
+      USER_PERMISSIONS.EDIT_COURSE,
+      USER_PERMISSIONS.DELETE_COURSE,
+    ],
+  },
+  super_admin: {
+    id: "super_admin" as const,
+    title: "Super Admin",
+    permissions: [
+      USER_PERMISSIONS.ADD_COURSE,
+      USER_PERMISSIONS.EDIT_COURSE,
+      USER_PERMISSIONS.DELETE_COURSE,
+      USER_PERMISSIONS.ADD_AUTHOR,
+      USER_PERMISSIONS.ADD_CATEGORY,
+      USER_PERMISSIONS.EDIT_AUTHOR,
+      USER_PERMISSIONS.EDIT_CATEGORY,
+      USER_PERMISSIONS.DELETE_AUTHOR,
+      USER_PERMISSIONS.DELETE_CATEGORY,
+      USER_PERMISSIONS.MENTION_OTHER_AUTHOR,
+    ],
+  },
+};

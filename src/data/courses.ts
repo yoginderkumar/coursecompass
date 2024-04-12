@@ -32,6 +32,14 @@ export type CategoryIds =
 
 export type CourseRatings = { value: number; uid: string }[];
 
+type Author = {
+  uid: string;
+  name: string;
+  isVerified?: boolean;
+  photoUrl?: string | null;
+  reference_uid?: string;
+};
+
 export type Course = {
   id: string;
   language?: string;
@@ -41,13 +49,18 @@ export type Course = {
   currency: CURRENCY_TYPES;
   description: string;
   price: number;
-  started_at: Timestamp;
   thumbnail?: string;
   title: string;
   updated_at: Timestamp;
   ratings?: CourseRatings;
   category: CategoryIds;
   averageRatings: number;
+  author: Author;
+  start: {
+    date?: Timestamp;
+    isRecorded?: boolean;
+    isLive?: boolean;
+  };
 };
 
 function useCoursesCollection() {
@@ -278,6 +291,22 @@ export function useCourses() {
   };
 }
 
+export function useMyCourses(userId: string) {
+  const coursesCollection = useCoursesCollection();
+  const coursesQuery = query(
+    coursesCollection,
+    where("author.uid", "==", userId),
+    orderBy("created_at", "desc")
+  );
+  const { data: courses } = useFirestoreCollectionData(coursesQuery, {
+    idField: "id",
+  });
+
+  return {
+    courses,
+  };
+}
+
 export function useCoursesForUser() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -311,10 +340,6 @@ export function useCoursesForUser() {
     courses,
     isLoading,
   };
-
-  return {
-    courses,
-  };
 }
 
 export function useAddNewCourse() {
@@ -333,7 +358,7 @@ export function useAddNewCourse() {
     }) => {
       try {
         if (!image) return null;
-        const storageRef = ref(storage, `images/${docRef.id}/${image.name}`);
+        const storageRef = ref(storage, `courses/${docRef.id}/${image.name}`);
         const { ref: pathRef } = await uploadBytes(storageRef, image);
         const imageUrl = await getDownloadURL(pathRef);
         await setDoc(docRef, {

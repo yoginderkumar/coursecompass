@@ -1,6 +1,7 @@
 import { getColorForString } from "generate-colors";
 import * as Validator from "yup";
 import {
+  Alert,
   Box,
   Button,
   Dropdown,
@@ -22,22 +23,32 @@ import {
   CURRENCY_TYPES,
   CategoryIds,
   Course,
+  TUser,
+  USER_PERMISSIONS,
+  checkIfUserCan,
   useAddNewCourse,
   useAddRatingAndReview,
+  useAuthorsOnce,
 } from "../data";
-import { FormImageFileField, FormTextArea, Textarea } from "../components/Form";
+import {
+  FormImageFileField,
+  FormTextArea,
+  InputLabel,
+  Textarea,
+} from "../components/Form";
 import {
   categories,
   categoryTitlesMapped,
   ratingHelper,
 } from "../common/constants";
 import { User } from "firebase/auth";
-import { getLanguageValue, pluralize } from "../utils";
+import { dateToTimestamp, getLanguageValue, pluralize } from "../utils";
 import { Timestamp } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { Amount } from "../common/Amount";
 import { getCategoryIcon } from "../common";
 import PlaceholderImage from "../assets/images/placeholder.png";
+import { SelectAuthor } from "../Authors";
 
 export function CourseBox({
   title,
@@ -283,7 +294,8 @@ function RateAndReviewCourseForm({
 
 export function AddCourseInModal({
   children,
-}: {
+  ...props
+}: React.ComponentProps<typeof AddNewCourseForm> & {
   children: (props: { add: () => void }) => React.ReactNode;
 }) {
   const state = useOverlayTriggerState({});
@@ -299,7 +311,7 @@ export function AddCourseInModal({
         placement="right"
         onClose={state.close}
       >
-        <AddNewCourseForm close={state.close} />
+        <AddNewCourseForm {...props} close={state.close} />
       </Modal>
     </>
   );
@@ -328,8 +340,34 @@ const categoriesForOptions = categories.map((category) => {
   };
 });
 
-function AddNewCourseForm({ close }: { close: () => void }) {
+type TAuthorForPayload = {
+  uid: string;
+  name: string;
+  isVerified?: boolean;
+  photoUrl?: string | null;
+  reference_uid?: string;
+};
+
+type TStartPayload = {
+  date?: Timestamp;
+  isRecorded?: boolean;
+  isLive?: boolean;
+};
+
+function AddNewCourseForm({
+  user,
+  close,
+}: {
+  user: TUser;
+  close?: () => void;
+}) {
+  const canMentionAuthor = checkIfUserCan(
+    user.role,
+    USER_PERMISSIONS.MENTION_OTHER_AUTHOR
+  );
+  const { authors } = useAuthorsOnce();
   const addNewCourse = useAddNewCourse();
+
   return (
     <Formik
       initialValues={{
@@ -339,21 +377,41 @@ function AddNewCourseForm({ close }: { close: () => void }) {
         currency: "INR" as CURRENCY_TYPES,
         description: "" as string,
         price: 0 as number,
-        started_at: new Date() as Date,
         thumbnail: undefined as File | undefined,
         title: "" as string,
         category: "" as CategoryIds,
+        author: undefined as TAuthorForPayload | undefined,
+        start: undefined as TStartPayload | undefined,
       }}
       onSubmit={formikOnSubmitWithErrorHandling(
         async (values, { resetForm }) => {
           if (!values.thumbnail)
             throw new Error("Please upload a valid image!");
+          let author: TAuthorForPayload | undefined = undefined;
+          if (user.role === "admin") {
+            author = {
+              uid: user.uid,
+              name: user.name,
+              isVerified: user.emailVerified,
+              photoUrl: user.displayPicture,
+              reference_uid: user.uid,
+            };
+          } else {
+            author = values.author;
+          }
+          if (!author?.uid) {
+            throw new Error("Please select a valid author for the course!");
+          }
+          if (!values.start) {
+            throw new Error("Please select a start period for the course!");
+          }
           await addNewCourse({
-            image: values.thumbnail,
             ...values,
-            started_at: Timestamp.fromDate(new Date(values.started_at)),
+            author,
+            image: values.thumbnail,
+            start: { ...values.start },
           });
-          close();
+          close?.();
           toast.success("Course added successfully!");
           resetForm();
         }
@@ -420,24 +478,115 @@ function AddNewCourseForm({ close }: { close: () => void }) {
                 label="Content URL"
               />
             </Inline>
-            <FormImageFileField name="thumbnail" />
+            <Stack gap="1">
+              <InputLabel fieldId="thumbnail_label">Thumbnail</InputLabel>
+              <FormImageFileField name="thumbnail" />
+            </Stack>
 
-            <Inline gap="6">
-              <FormField
-                required
-                fullWidth
-                name="creator"
-                placeholder="Enter creator"
-                label="Created By ?"
-              />
+            {canMentionAuthor ? (
+              <Box marginBottom="6">
+                <SelectAuthor
+                  authors={authors}
+                  value={
+                    values.author?.uid
+                      ? { id: values.author?.uid, label: values.author.name }
+                      : null
+                  }
+                  onChange={(option) => {
+                    if (option?.id) {
+                      const foundAuthor = authors.find(
+                        (author) => author.uid === option.id
+                      );
+                      if (foundAuthor) {
+                        setFieldValue("author", {
+                          uid: foundAuthor.uid,
+                          name: foundAuthor.name,
+                          isVerified: true,
+                          photoUrl: foundAuthor.displayPicture,
+                          reference_uid: foundAuthor.reference_uid,
+                        });
+                      }
+                    }
+                  }}
+                />
+              </Box>
+            ) : null}
+            <Inline gap="6" alignItems="center">
               <FormField
                 required
                 fullWidth
                 name="started_at"
                 placeholder="DD/MM/YYYY"
                 type="date"
-                label="Started On"
+                label="Starts On/Started On"
+                onChange={(e) => {
+                  if (values.start) {
+                    setFieldValue("start", {
+                      ...values.start,
+                      isRecorded: false,
+                      date: dateToTimestamp(new Date(e.currentTarget.value)),
+                    });
+                  } else {
+                    setFieldValue("start", {
+                      date: dateToTimestamp(new Date(e.currentTarget.value)),
+                    });
+                  }
+                }}
               />
+              <Box
+                backgroundColor={
+                  values?.start?.isRecorded
+                    ? "surfacePrimaryLowest"
+                    : "surfaceNeutralLowest"
+                }
+                fontSize="c1"
+                className="h-[40px]"
+                paddingY="2"
+                paddingX="3"
+                rounded="md"
+                display="flex"
+                alignItems="center"
+                cursor="pointer"
+                onClick={() => {
+                  setFieldValue("start", {
+                    isRecorded: true,
+                  });
+                }}
+                color={values?.start?.isRecorded ? "textPrimary" : "textMedium"}
+              >
+                Recorded
+              </Box>
+              <Box
+                cursor="pointer"
+                backgroundColor={
+                  values?.start?.isLive
+                    ? "surfacePrimaryLowest"
+                    : "surfaceNeutralLowest"
+                }
+                fontSize="c1"
+                className="h-[40px]"
+                display="flex"
+                alignItems="center"
+                paddingY="2"
+                paddingX="3"
+                rounded="md"
+                color={values?.start?.isLive ? "textPrimary" : "textMedium"}
+                onClick={() => {
+                  if (values.start) {
+                    setFieldValue("start", {
+                      ...values.start,
+                      isRecorded: false,
+                      isLive: true,
+                    });
+                  } else {
+                    setFieldValue("start", {
+                      isLive: true,
+                    });
+                  }
+                }}
+              >
+                Live
+              </Box>
             </Inline>
             <Inline gap="8">
               <Inline
@@ -479,7 +628,7 @@ function AddNewCourseForm({ close }: { close: () => void }) {
                 />
               </Inline>
             </Inline>
-            {status ? <Text>Error: {status}</Text> : null}
+            {status ? <Alert status="error">{status}</Alert> : null}
           </ModalBody>
           <ModalFooter>
             <Button
@@ -505,15 +654,15 @@ export function CourseCard({ course }: { course: Course }) {
     thumbnail,
     title,
     id,
-    creator,
+    author,
     currency,
     price,
     description,
     category,
     averageRatings,
     language,
-    started_at,
     ratings,
+    start,
   } = course;
   return (
     <Box
@@ -559,7 +708,7 @@ export function CourseCard({ course }: { course: Course }) {
               <Text fontSize="b1" className="break-words line-clamp-1 mr-4">
                 {title}
               </Text>
-              <Text fontSize="c3">By: {creator}</Text>
+              <Text fontSize="c3">By: {author.name}</Text>
             </Stack>
             <Stack gap="1">
               <Text fontSize="b1" className="break-words line-clamp-1 mr-4">
@@ -599,7 +748,11 @@ export function CourseCard({ course }: { course: Course }) {
             </Stack>
             <Stack gap="1" className="w-[33%]">
               <Text>Launch Date</Text>
-              <Time timeStamp={started_at} />
+              {start?.date ? (
+                <Time timeStamp={start.date} />
+              ) : (
+                <Text>{start.isRecorded ? "Recorded" : "Live"}</Text>
+              )}
             </Stack>
           </Inline>
         </Stack>
