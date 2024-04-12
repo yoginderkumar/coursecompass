@@ -297,7 +297,7 @@ export function InputLabel({
   children,
   fieldId,
   className,
-  // secondaryLabel,
+  secondaryLabel,
   actionLabel,
   ...props
 }: React.DetailedHTMLProps<
@@ -320,6 +320,9 @@ export function InputLabel({
         {...props}
       >
         {children}
+        {secondaryLabel ? (
+          <span className="text-gray-500 ml-1">({secondaryLabel})</span>
+        ) : null}
       </label>
       {actionLabel ? <div>{actionLabel}</div> : null}
     </div>

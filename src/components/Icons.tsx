@@ -462,3 +462,33 @@ export function CameraIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function InformationCircleFilledIcon(props: IconProps) {
+  return (
+    <Icon {...props} viewBox="0 0 20 20">
+      <path
+        d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V9H11V15ZM11 7H9V5H11V7Z"
+        fill="currentColor"
+      />
+    </Icon>
+  );
+}
+
+export function InformationWarningIcon(props: IconProps) {
+  return (
+    <Icon {...props} fill="none" viewBox="0 0 32 29" stroke="currentColor">
+      <path
+        d="M3.44988 29.0001H28.5499C31.1165 29.0001 32.7165 26.2168 31.4332 24.0001L18.8832 2.3168C17.5999 0.10013 14.3999 0.10013 13.1165 2.3168L0.566543 24.0001C-0.71679 26.2168 0.883209 29.0001 3.44988 29.0001ZM15.9999 17.3335C15.0832 17.3335 14.3332 16.5835 14.3332 15.6668V12.3335C14.3332 11.4168 15.0832 10.6668 15.9999 10.6668C16.9165 10.6668 17.6665 11.4168 17.6665 12.3335V15.6668C17.6665 16.5835 16.9165 17.3335 15.9999 17.3335ZM17.6665 24.0001H14.3332V20.6668H17.6665V24.0001Z"
+        fill="currentColor"
+      />
+    </Icon>
+  );
+}
+
+export function ArrowDropDownIcon(props: IconProps) {
+  return (
+    <Icon {...props} fill="currentColor" viewBox="0 0 24 24">
+      <path opacity="0.995" d="M7 10L12 15L17 10H7Z" fill="currentColor" />
+    </Icon>
+  );
+}

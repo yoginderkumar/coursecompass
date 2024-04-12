@@ -1,4 +1,6 @@
 import plural, { addRule as addPluralRule } from "plural";
+import { stringify } from "qs";
+import { EffectCallback, useEffect } from "react";
 
 export function getInitials(str: string, length?: number) {
   length = length || 2;
@@ -92,5 +94,25 @@ export async function readFileAsDataURL(file: Blob) {
       reject(e.target?.result);
     });
     reader.readAsDataURL(file);
+  });
+}
+
+export function queryToSearch(
+  query: Record<
+    string,
+    null | string | number | Array<string> | Array<number>
+  > = {},
+  options: qs.IStringifyOptions = {}
+): string {
+  return stringify(query, { addQueryPrefix: true, ...options });
+}
+
+function useEffectOnce(effect: EffectCallback) {
+  useEffect(effect);
+}
+
+export function useMount(fn: () => void) {
+  useEffectOnce(() => {
+    fn();
   });
 }

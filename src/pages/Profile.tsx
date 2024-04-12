@@ -63,16 +63,14 @@ function Profile({ user }: { user: TUser }) {
                 <Text>{user?.email}</Text>
               </Stack>
               <Stack gap="4">
-                {user.roles?.length ? (
-                  <Button
-                    level="primary"
-                    onClick={() => {
-                      navigate("/dashboard");
-                    }}
-                  >
-                    Visit Dashboard
-                  </Button>
-                ) : null}
+                <Button
+                  level="primary"
+                  onClick={() => {
+                    navigate("/dashboard");
+                  }}
+                >
+                  Visit Dashboard
+                </Button>
                 <Inline gap="4">
                   <Button>Edit Profile</Button>
                   <Button level="primary" status="danger">

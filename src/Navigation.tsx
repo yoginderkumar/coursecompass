@@ -19,6 +19,8 @@ import { LoginOrRegisterInModal } from "./Auth";
 import { useAuth, useUser } from "reactfire";
 import { getInitials } from "./utils";
 import { signOut } from "firebase/auth";
+import { useMemo } from "react";
+import { USER_PERMISSIONS, checkIfUserCan, useProfile } from "./data";
 
 export function Navigation() {
   const auth = useAuth();
@@ -119,10 +121,7 @@ export function Navigation() {
   );
 }
 
-const menu = [
-  { path: "courses", title: "Courses" },
-  { path: "reviews", title: "Reviews" },
-];
+const menu = [{ path: "courses", title: "Courses" }];
 
 export function DashboardLayout() {
   const maxHeight = "calc(100vh - 112px)";
@@ -145,9 +144,20 @@ export function DashboardLayout() {
 
 export default function DashboardSideBar() {
   const { pathname } = useLocation();
+  const { user } = useProfile();
+  const roleBasedMenu = useMemo(() => {
+    const updatedMenu = menu;
+    if (checkIfUserCan(user.role, USER_PERMISSIONS.ADD_AUTHOR)) {
+      if (!updatedMenu.find((menuItem) => menuItem.path === "authors")?.title) {
+        updatedMenu.push({ path: "authors", title: "Authors" });
+      }
+    }
+    return updatedMenu;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <Stack as="ul">
-      {menu.map(({ path, title }) => {
+      {roleBasedMenu.map(({ path, title }) => {
         const isActivated = pathname.includes(path);
         return (
           <Inline

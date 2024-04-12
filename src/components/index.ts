@@ -25,6 +25,8 @@ import {
   formikOnSubmitWithErrorHandling,
 } from "./Form";
 
+import { Alert } from "./Alert";
+
 //Skeletons
 import { SkeletonTitle as SkeletonLine, SkeletonBox } from "./Skeletons";
 
@@ -33,9 +35,14 @@ import { DataLoadingFallback } from "./DataLoadingFallback";
 //Ratings
 import { ProgressBar } from "./Ratings";
 
+import { SearchSelect } from "./Select";
+
+import { PageMeta, DeferRending } from "./Page";
+
 export {
   Box,
   Text,
+  Alert,
   Stack,
   Button,
   Inline,
@@ -68,6 +75,7 @@ export {
 
   //Options
   Dropdown,
+  SearchSelect,
 
   //Skeletons & Loaders
   SkeletonBox,
@@ -76,4 +84,8 @@ export {
 
   //Rating
   ProgressBar,
+
+  //Page metadata
+  PageMeta,
+  DeferRending,
 };
