@@ -1,14 +1,15 @@
 import { createRoot } from "react-dom/client";
+import { OverlayProvider } from "react-aria";
 import { FirebaseAppProvider, SuspenseWithPerf } from "reactfire";
-import CourseCompassApp from "./App";
-import "./index.css";
+import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter as Router } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+
+import "./index.css";
 import config from "./config.ts";
-import { OverlayProvider } from "react-aria";
+import CourseCompassApp from "./App";
 import { Inline } from "./components/Inline.tsx";
 import { SpinnerIcon } from "./components/Icons.tsx";
-import { HelmetProvider } from "react-helmet-async";
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
 

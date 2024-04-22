@@ -3,8 +3,11 @@ import {
   GoogleAuthProvider,
   getAdditionalUserInfo,
   getAuth,
+  signInWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
+  AuthError,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import {
   CollectionReference,
@@ -22,7 +25,7 @@ import {
 } from "reactfire";
 import { Optional } from "utility-types";
 
-type UserRoles = "admin" | "super_admin";
+type UserRoles = "user" | "admin" | "super_admin";
 
 export type TUser = {
   uid: string;
@@ -33,7 +36,6 @@ export type TUser = {
   updated_at?: string;
   emailVerified?: boolean;
   providerId: "firebase";
-  roles?: string[];
   role: UserRoles;
 };
 
@@ -62,13 +64,47 @@ export function useLoginCredentials() {
       }
       return true;
     } catch (e) {
-      const err = e as Error;
-      throw err;
+      throw handleFirebaseAuthError(e as AuthError);
     }
   }, [auth, createProfile]);
 
+  const loginWithEmail = useCallback(
+    async ({ email, password }: { email: string; password: string }) => {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        return true;
+      } catch (e) {
+        throw handleFirebaseAuthError(e as AuthError);
+      }
+    },
+    [auth]
+  );
+
+  const signupWithEmail = useCallback(
+    async ({
+      name,
+      email,
+      password,
+    }: {
+      name: string;
+      email: string;
+      password: string;
+    }) => {
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        await createProfile(auth, { name });
+        return true;
+      } catch (e) {
+        throw handleFirebaseAuthError(e as AuthError);
+      }
+    },
+    [auth, createProfile]
+  );
+
   return {
+    loginWithEmail,
     loginWithGoogle,
+    signupWithEmail,
   };
 }
 
@@ -85,13 +121,18 @@ export function useCreateProfile() {
           uid: currentUser.uid,
           name: currentUser?.displayName || data?.name || "Unknown",
           email: currentUser?.email || "",
-          role: "admin",
+          role: "user",
           displayPicture: currentUser?.photoURL,
           created_at: currentUser.metadata?.creationTime,
           updated_at: currentUser.metadata?.lastSignInTime,
           emailVerified: currentUser.emailVerified || false,
           providerId: "firebase",
         };
+        if (data?.name) {
+          // update the auth profile
+          updateProfile(currentUser, { displayName: data.name });
+          currentUser.reload();
+        }
         await setDoc(userDoc, {
           ...userToCreate,
         });
@@ -165,6 +206,11 @@ export function checkIfUserCan(
 }
 
 const ROLES_AND_PERMISSIONS = {
+  user: {
+    id: "user" as const,
+    title: "User",
+    permissions: [],
+  },
   admin: {
     id: "admin" as const,
     title: "Admin",
@@ -191,3 +237,28 @@ const ROLES_AND_PERMISSIONS = {
     ],
   },
 };
+
+export function handleFirebaseAuthError(error: AuthError): string {
+  switch (error.code) {
+    case "auth/wrong-password":
+      return "Invalid email or password.";
+    case "auth/user-not-found":
+      return "User not found. Please create an account.";
+    case "auth/weak-password":
+      return "Password is too weak. Please choose a stronger password.";
+    case "auth/email-already-in-use":
+      return "Email already in use. Please try a different email.";
+    case "auth/invalid-email":
+      return "Invalid email address. Please enter a valid email.";
+    case "auth/operation-not-allowed":
+      return "This operation is not allowed. Please contact support.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with the same email but different sign-in credentials. Sign in with the appropriate provider.";
+    case "auth/invalid-login-credentials":
+      return "Invalid credentials. Please enter a valid email & password.";
+    case "auth/popup-closed-by-user":
+      return "Please select a valid account in order to proceed.";
+    default:
+      return "An error occurred. Please try again later.";
+  }
+}

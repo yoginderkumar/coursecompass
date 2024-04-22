@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { useLoginCredentials } from "../data";
 import toast from "react-hot-toast";
+import { Formik } from "formik";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useSigninCheck } from "reactfire";
+import * as Validator from "yup";
+import { EmailValidator, queryToSearch } from "../utils";
+import { useLoginCredentials } from "../data";
+import { GoogleIcon, SpinnerIcon } from "../components/Icons";
 import {
   Button,
   FormField,
@@ -10,12 +16,20 @@ import {
   Inline,
   Text,
   Box,
+  formikOnSubmitWithErrorHandling,
+  Alert,
 } from "../components";
-import { Formik } from "formik";
-import { GoogleIcon, SpinnerIcon } from "../components/Icons";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useSigninCheck } from "reactfire";
-import { queryToSearch } from "../utils";
+
+const loginSignUpValidationSchema = Validator.object().shape({
+  name: Validator.string()
+    .matches(/^[A-Za-z ]*$/, "Please enter valid name")
+    .max(40),
+  email: EmailValidator.required("Please enter a valid email!"),
+  password: Validator.string()
+    .min(8)
+    .max(15)
+    .required("Please enter a valid password!"),
+});
 
 export function LoginOrRegisterInModal({
   children,
@@ -24,8 +38,8 @@ export function LoginOrRegisterInModal({
     onOpen: (mode: "login" | "signup") => void;
   }) => React.ReactNode;
 }) {
-  const { loginWithGoogle } = useLoginCredentials();
-
+  const { signupWithEmail, loginWithGoogle, loginWithEmail } =
+    useLoginCredentials();
   const [loading, setLoading] = useState<boolean>(false);
   const [mode, setMode] = useState<"login" | "signup" | undefined>(undefined);
   function onClose() {
@@ -40,9 +54,8 @@ export function LoginOrRegisterInModal({
       toast.success("Logged in successfully!!!");
       onClose();
     } catch (e) {
-      const err = e as Error;
       setLoading(false);
-      toast.error(err.message || "Something went wrong!");
+      toast.error(`${e}` || "Something went wrong!");
     }
   }
 
@@ -61,10 +74,34 @@ export function LoginOrRegisterInModal({
       >
         <ModalBody autoMaxHeight>
           <Formik
-            initialValues={{ email: "", password: "", confirmPassword: "" }}
-            onSubmit={() => undefined}
+            initialValues={{
+              name: undefined as string | undefined,
+              email: "",
+              password: "",
+            }}
+            validationSchema={loginSignUpValidationSchema}
+            onSubmit={formikOnSubmitWithErrorHandling(
+              async (values, { setFieldError }) => {
+                if (mode === "login") {
+                  await loginWithEmail({
+                    email: values.email,
+                    password: values.password,
+                  });
+                } else {
+                  if (!values.name?.length) {
+                    setFieldError("name", "Please enter a valid name");
+                    return;
+                  }
+                  await signupWithEmail({
+                    name: values.name,
+                    email: values.email,
+                    password: values.password,
+                  });
+                }
+              }
+            )}
           >
-            {() => (
+            {({ isSubmitting, status, submitForm }) => (
               <Stack gap="4">
                 {mode === "login" ? (
                   <Stack>
@@ -80,12 +117,28 @@ export function LoginOrRegisterInModal({
                       type="password"
                       placeholder="Enter Password"
                     />
-                    <Button size="lg" type="submit" disabled={loading}>
+
+                    {status ? <Alert status="error">{status}</Alert> : null}
+
+                    <Button
+                      size="lg"
+                      type="submit"
+                      disabled={loading}
+                      loading={isSubmitting}
+                      onClick={submitForm}
+                    >
+                      {isSubmitting ? <SpinnerIcon /> : null}
                       Login
                     </Button>
                   </Stack>
                 ) : (
                   <Stack>
+                    <FormField
+                      name="name"
+                      label="Name"
+                      type="text"
+                      placeholder="Enter name"
+                    />
                     <FormField
                       name="email"
                       label="Email"
@@ -98,13 +151,17 @@ export function LoginOrRegisterInModal({
                       type="password"
                       placeholder="Enter Password"
                     />
-                    <FormField
-                      name="confirm_password"
-                      label="Confirm Password"
-                      type="password"
-                      placeholder="Confirm Password"
-                    />
-                    <Button size="lg" type="submit" disabled={loading}>
+
+                    {status ? <Alert status="error">{status}</Alert> : null}
+
+                    <Button
+                      size="lg"
+                      type="submit"
+                      disabled={loading}
+                      loading={isSubmitting}
+                      onClick={submitForm}
+                    >
+                      {isSubmitting ? <SpinnerIcon /> : null}
                       Sign up
                     </Button>
                   </Stack>
@@ -118,6 +175,7 @@ export function LoginOrRegisterInModal({
                   size="lg"
                   loading={loading}
                   onClick={joinWithGoogleHandler}
+                  disabled={isSubmitting}
                 >
                   {loading ? <SpinnerIcon /> : <GoogleIcon />}
                   Continue with google
@@ -130,6 +188,7 @@ export function LoginOrRegisterInModal({
                         as="span"
                         color="textAlt1"
                         className="underline"
+                        cursor="pointer"
                         onClick={() => setMode("signup")}
                       >
                         Sign up
@@ -142,6 +201,7 @@ export function LoginOrRegisterInModal({
                         as="span"
                         color="textAlt1"
                         className="underline"
+                        cursor="pointer"
                         onClick={() => setMode("login")}
                       >
                         Login

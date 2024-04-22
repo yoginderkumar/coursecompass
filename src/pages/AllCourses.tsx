@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Inline,
   Menu,
   MenuButton,
@@ -11,17 +12,17 @@ import {
   Text,
   Time,
 } from "../components";
-import { OrderDateBy, RatingsFilter, useCoursesByCategory } from "../data";
+import { RatingsFilter, useCoursesByCategory } from "../data";
 import { categories, categoryTitlesMapped } from "../common/constants";
-import { ArrowDownIcon, StarIcon } from "../components/Icons";
+import {
+  ArrowDownIcon,
+  DocumentIcon,
+  SpinnerIcon,
+  StarIcon,
+} from "../components/Icons";
 import { Link } from "react-router-dom";
 import { Amount } from "../common/Amount";
 import { CourseCard } from "../Courses";
-
-const orderDateBy: Array<{ id: OrderDateBy; title: string }> = [
-  { id: "latest", title: "Latest Courses" },
-  { id: "oldest", title: "Older Courses" },
-];
 
 const ratingsOptions: Array<{ id: RatingsFilter; title: string }> = [
   { id: "high_to_low", title: "Highest to Lowest" },
@@ -29,7 +30,15 @@ const ratingsOptions: Array<{ id: RatingsFilter; title: string }> = [
 ];
 
 export default function AllCoursesPage() {
-  const { courses, isLoading, params, setFieldValue } = useCoursesByCategory();
+  const {
+    courses,
+    isLoading,
+    params,
+    isFetchingMore,
+    pagination: { emptied },
+    loadMore,
+    setFieldValue,
+  } = useCoursesByCategory();
   return (
     <>
       <PageMeta title="All Courses" />
@@ -37,40 +46,69 @@ export default function AllCoursesPage() {
         <Stack gap="4">
           <Inline alignItems="center" justifyContent="between">
             <Box>
-              <Text as="h5" fontSize="h5">
+              <Text as="h5" fontSize={{ xs: "s2", md: "h5" }}>
                 All Courses
               </Text>
             </Box>
-          </Inline>
-          <Inline gap="4" justifyContent="between">
-            <Text>Sort By</Text>
-            <Inline gap="4">
-              <Inline gap="2" marginTop="px" alignItems="center">
-                <Text fontSize="c2">Added :</Text>
-                <Menu>
-                  <MenuButton inline>
-                    <Inline alignItems="center" color="textOnSurface">
-                      <Text>
-                        {params.orderDateBy === "latest" ? "Latest" : "Oldest"}
-                      </Text>
-                      <ArrowDownIcon color="iconMedium" />
-                    </Inline>
-                  </MenuButton>
-                  <MenuList align="bottom-right">
-                    {orderDateBy.map(({ id, title }) => (
-                      <MenuItem
-                        action={id}
-                        key={id}
-                        onClick={() => setFieldValue("orderDateBy", id)}
-                      >
-                        <Text fontSize="b3" className="whitespace-pre">
-                          {title}
+            <Box className="hidden md:block">
+              <Inline gap="4">
+                <Inline gap="2" alignItems="center">
+                  <Text fontSize="c2">Ratings :</Text>
+                  <Menu>
+                    <MenuButton inline>
+                      <Inline alignItems="center" color="textOnSurface">
+                        <Text>
+                          {params?.ratings === "high_to_low"
+                            ? "Highest to Lowest"
+                            : "Lowest to Highest"}
                         </Text>
-                      </MenuItem>
-                    ))}
-                  </MenuList>
-                </Menu>
+                        <ArrowDownIcon color="iconMedium" />
+                      </Inline>
+                    </MenuButton>
+                    <MenuList align="bottom-right">
+                      {ratingsOptions.map(({ id, title }) => (
+                        <MenuItem
+                          action={id}
+                          key={id}
+                          onClick={() => setFieldValue("ratings", id)}
+                        >
+                          <Text fontSize="b3" className="whitespace-pre">
+                            {title}
+                          </Text>
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                </Inline>
+                <Inline gap="2" alignItems="center">
+                  <Text fontSize="c2">Category :</Text>
+                  <Menu>
+                    <MenuButton inline>
+                      <Inline alignItems="center" color="textOnSurface">
+                        <Text>{categoryTitlesMapped?.[params.categoryId]}</Text>
+                        <ArrowDownIcon color="iconMedium" />
+                      </Inline>
+                    </MenuButton>
+                    <MenuList align="bottom-right">
+                      {categories.map(({ id, title }) => (
+                        <MenuItem
+                          action={id}
+                          key={id}
+                          onClick={() => setFieldValue("categoryId", id)}
+                        >
+                          <Text fontSize="b3" className="whitespace-pre">
+                            {title}
+                          </Text>
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                </Inline>
               </Inline>
+            </Box>
+          </Inline>
+          <Box className="block md:hidden">
+            <Stack gap="2">
               <Inline gap="2" alignItems="center">
                 <Text fontSize="c2">Ratings :</Text>
                 <Menu>
@@ -123,8 +161,8 @@ export default function AllCoursesPage() {
                   </MenuList>
                 </Menu>
               </Inline>
-            </Inline>
-          </Inline>
+            </Stack>
+          </Box>
         </Stack>
         {isLoading ? (
           <Box as="ul" className="grid grid-cols-2 gap-6">
@@ -277,17 +315,29 @@ export default function AllCoursesPage() {
                 )
               )}
             </Box>
-            <Inline
-              as="ul"
-              gap="6"
-              flexWrap="wrap"
-              className="inlineBlock xl:hidden"
-            >
+            <Box as="ul" gap="6" flexWrap="wrap" className="flex xl:hidden">
               {courses.map((course) => (
                 <CourseCard course={course} key={course.id} />
               ))}
-            </Inline>
+            </Box>
           </>
+        ) : (
+          <Stack alignItems="center" gap="6" marginY="24">
+            <DocumentIcon size="12" />
+            <Stack gap="3" alignItems="center">
+              <Text fontSize="s2">No courses found!</Text>
+              <Text fontSize="b3" color="textLow">
+                We could not find courses here. Try changing the filters!
+              </Text>
+            </Stack>
+          </Stack>
+        )}
+        {!emptied ? (
+          <Stack alignItems="center" marginTop="12">
+            <Button onClick={loadMore} loading={isFetchingMore}>
+              {isFetchingMore ? <SpinnerIcon /> : null} Load More
+            </Button>
+          </Stack>
         ) : null}
       </Stack>
     </>

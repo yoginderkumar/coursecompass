@@ -16,19 +16,20 @@ import {
   formikOnSubmitWithErrorHandling,
   useOverlayTriggerState,
 } from "../components";
-import { ArrowDownIcon, StarIcon } from "../components/Icons";
+import { ArrowDownIcon, SpinnerIcon, StarIcon } from "../components/Icons";
 import { Form, Formik } from "formik";
 import toast from "react-hot-toast";
 import {
   CURRENCY_TYPES,
-  CategoryIds,
   Course,
   TUser,
   USER_PERMISSIONS,
   checkIfUserCan,
   useAddNewCourse,
   useAddRatingAndReview,
+  useAddRequest,
   useAuthorsOnce,
+  useCategories,
 } from "../data";
 import {
   FormImageFileField,
@@ -36,19 +37,18 @@ import {
   InputLabel,
   Textarea,
 } from "../components/Form";
-import {
-  categories,
-  categoryTitlesMapped,
-  ratingHelper,
-} from "../common/constants";
+import { ratingHelper } from "../common/constants";
 import { User } from "firebase/auth";
 import { dateToTimestamp, getLanguageValue, pluralize } from "../utils";
 import { Timestamp } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { Amount } from "../common/Amount";
-import { getCategoryIcon } from "../common";
 import PlaceholderImage from "../assets/images/placeholder.png";
 import { SelectAuthor } from "../Authors";
+import { CategoryIcon } from "../Categories";
+import { useMemo } from "react";
+import { SearchSelect } from "../components/Select";
+import { DropdownOption } from "../components/Dropdown";
 
 export function CourseBox({
   title,
@@ -162,7 +162,10 @@ const MAX_DESCRIPTION = 500;
 
 const rateAndReviewCourseValidation = Validator.object().shape({
   ratingValue: Validator.number().required("Please add a valid rating!"),
-  title: Validator.string().required("Please enter title for your review!"),
+  title: Validator.string()
+    .min(4)
+    .max(100)
+    .required("Please enter title for your review!"),
   description: Validator.string().max(
     MAX_DESCRIPTION,
     "You can add upto 500 characters maximum!"
@@ -212,6 +215,7 @@ function RateAndReviewCourseForm({
         values: { ratingValue, description },
         errors,
         isSubmitting,
+        status,
         setFieldValue,
       }) => (
         <Form
@@ -222,6 +226,11 @@ function RateAndReviewCourseForm({
         >
           <ModalBody>
             <Stack gap="8">
+              {status ? (
+                <Alert status="error" margin="0">
+                  {status}
+                </Alert>
+              ) : null}
               <Stack gap="2">
                 <Inline gap="4">
                   {[1, 2, 3, 4, 5].map((i) => (
@@ -333,13 +342,6 @@ const currencies: Array<{ id: CURRENCY_TYPES; label: string }> = [
 
 const MAX_DESCRIPTION_LENGTH = 500;
 
-const categoriesForOptions = categories.map((category) => {
-  return {
-    id: category.id,
-    label: category.title,
-  };
-});
-
 type TAuthorForPayload = {
   uid: string;
   name: string;
@@ -367,19 +369,28 @@ function AddNewCourseForm({
   );
   const { authors } = useAuthorsOnce();
   const addNewCourse = useAddNewCourse();
+  const { categories } = useCategories();
+
+  const categoryOptions: DropdownOption[] = useMemo(() => {
+    return categories.map((category) => {
+      return {
+        id: category.id,
+        label: category.title,
+      };
+    });
+  }, [categories]);
 
   return (
     <Formik
       initialValues={{
         language: "" as string,
         content_url: "" as string,
-        creator: "" as string,
         currency: "INR" as CURRENCY_TYPES,
         description: "" as string,
         price: 0 as number,
         thumbnail: undefined as File | undefined,
         title: "" as string,
-        category: "" as CategoryIds,
+        category: null as { id: string; title: string } | null,
         author: undefined as TAuthorForPayload | undefined,
         start: undefined as TStartPayload | undefined,
       }}
@@ -405,9 +416,13 @@ function AddNewCourseForm({
           if (!values.start) {
             throw new Error("Please select a start period for the course!");
           }
+          if (!values.category?.id) {
+            throw new Error("Please select a category for the course!");
+          }
           await addNewCourse({
             ...values,
             author,
+            category: { ...values.category },
             image: values.thumbnail,
             start: { ...values.start },
           });
@@ -439,22 +454,26 @@ function AddNewCourseForm({
               maxLength={MAX_DESCRIPTION_LENGTH}
               help={`${values.description.length}/${MAX_DESCRIPTION_LENGTH} characters`}
             />
-            <Inline justifyContent="between" gap="6" marginBottom="6">
-              <Box width="full">
-                <Dropdown
-                  value={values?.category}
-                  control="input"
-                  label="Pick Category"
-                  searchPlaceholder="Select any category"
-                  onChange={(e) => {
-                    if (e?.id) {
-                      setFieldValue("category", e?.id);
-                    }
-                  }}
-                  alternateBase
-                  options={categoriesForOptions}
-                />
-              </Box>
+            <Stack gap="6" marginBottom="6">
+              <SearchSelect
+                searchPlaceholder="Search or Select"
+                control="input"
+                label="Category"
+                value={
+                  values.category?.id
+                    ? { id: values.category.id, label: values.category.title }
+                    : null
+                }
+                onChange={(option) => {
+                  if (option?.id) {
+                    setFieldValue("category", {
+                      id: option.id,
+                      title: option.label,
+                    });
+                  }
+                }}
+                options={categoryOptions}
+              />
               <Dropdown
                 value={values?.language}
                 control="input"
@@ -468,7 +487,7 @@ function AddNewCourseForm({
                 alternateBase
                 options={languages}
               />
-            </Inline>
+            </Stack>
             <Inline gap="6">
               <FormField
                 required
@@ -659,10 +678,10 @@ export function CourseCard({ course }: { course: Course }) {
     price,
     description,
     category,
-    averageRatings,
     language,
     ratings,
     start,
+    averageRatings,
   } = course;
   return (
     <Box
@@ -721,9 +740,9 @@ export function CourseCard({ course }: { course: Course }) {
             {description}
           </Text>
           <Inline gap="2" alignItems="center">
-            {getCategoryIcon({ id: course.category, size: "4" })}
+            <CategoryIcon id={course.category.id} size="4" />
             <Text as="span" fontSize="c1">
-              {categoryTitlesMapped[category]}
+              {category.title}
             </Text>
           </Inline>
           <Inline
@@ -747,7 +766,7 @@ export function CourseCard({ course }: { course: Course }) {
               <Text className="line-clamp-1">{ratings?.length || 0} </Text>
             </Stack>
             <Stack gap="1" className="w-[33%]">
-              <Text>Launch Date</Text>
+              <Text>Launch</Text>
               {start?.date ? (
                 <Time timeStamp={start.date} />
               ) : (
@@ -758,5 +777,80 @@ export function CourseCard({ course }: { course: Course }) {
         </Stack>
       </Stack>
     </Box>
+  );
+}
+
+export function RequestCourseInModal({
+  children,
+  ...props
+}: React.ComponentProps<typeof RequestCourseForm> & {
+  children: (props: { add: () => void }) => React.ReactNode;
+}) {
+  const state = useOverlayTriggerState({});
+  return (
+    <>
+      {children({
+        add: state.open,
+      })}
+      <Modal
+        isOpen={state.isOpen}
+        isDismissable
+        title="Request a course"
+        onClose={state.close}
+      >
+        <RequestCourseForm {...props} close={state.close} />
+      </Modal>
+    </>
+  );
+}
+
+const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+function RequestCourseForm({ close }: { close?: () => void }) {
+  const addRequest = useAddRequest();
+  return (
+    <Formik
+      initialValues={{ course_url: "" as string }}
+      onSubmit={formikOnSubmitWithErrorHandling(async (values) => {
+        await addRequest(values.course_url);
+        close?.();
+        toast.success("We have raised a request for this course!");
+      })}
+      validationSchema={Validator.object({}).shape({
+        course_url: Validator.string()
+          .min(10)
+          .max(200)
+          .matches(urlRegex, "Please enter a valid url/course link.")
+          .required(
+            "Please enter this course URL that you would want to add on our platform!"
+          ),
+      })}
+    >
+      {({ status, isSubmitting }) => (
+        <Form
+          noValidate
+          placeholder={undefined}
+          onPointerEnterCapture={undefined}
+          onPointerLeaveCapture={undefined}
+        >
+          <ModalBody>
+            <FormField
+              name="course_url"
+              label="Course URL"
+              placeholder="Eg. https://www.scaler.com/courses/data-structures-and-algorithms/"
+              required
+            />
+            {status ? <Alert status="error">{status}</Alert> : null}
+          </ModalBody>
+          <ModalFooter>
+            <Button type="submit" size="lg" loading={isSubmitting}>
+              {isSubmitting ? <SpinnerIcon /> : null} Request
+            </Button>
+            <Button onClick={close} size="lg" disabled={isSubmitting}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </Form>
+      )}
+    </Formik>
   );
 }

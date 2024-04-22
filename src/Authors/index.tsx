@@ -1,6 +1,7 @@
 import { Form, Formik } from "formik";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Dropdown,
@@ -20,7 +21,7 @@ import {
   InputLabel,
   formikOnSubmitWithErrorHandling,
 } from "../components/Form";
-import { ImageValidator } from "../utils";
+import { ImageValidator, getInitials } from "../utils";
 import { Author, AuthorSocial, Socials, useAddAuthor } from "../data/authors";
 import { ArrowDownIcon, PlusIcon } from "../components/Icons";
 import toast from "react-hot-toast";
@@ -102,7 +103,6 @@ function AddAuthorForm({ close }: { close?: () => void }) {
           if (values.socials?.length) {
             let foundError = false;
             values.socials.forEach((social, i) => {
-              console.log("val: ", social);
               if (!social.id || !social.value?.length) {
                 setFieldError(`social_${i}`, "Please enter a valid link/email");
                 foundError = true;
@@ -285,5 +285,22 @@ export function SelectAuthor({
       }}
       options={authorsAsOptions}
     />
+  );
+}
+
+export function AuthorCard({ author }: { author: Author }) {
+  const { name, uid, displayPicture } = author;
+  return (
+    <Box backgroundColor="surfaceBase" rounded="lg" padding="3">
+      <Inline gap="3" paddingRight="6">
+        <Avatar
+          id={uid}
+          size="24"
+          initials={getInitials(name)}
+          image={displayPicture || undefined}
+        />
+        <Text fontSize="b1">{name}</Text>
+      </Inline>
+    </Box>
   );
 }

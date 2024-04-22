@@ -1,5 +1,6 @@
 import {
   CollectionReference,
+  QueryDocumentSnapshot,
   Timestamp,
   collection,
   doc,
@@ -8,7 +9,9 @@ import {
   limit,
   orderBy,
   query,
+  serverTimestamp,
   setDoc,
+  startAfter,
   where,
 } from "firebase/firestore";
 import { useFormik } from "formik";
@@ -18,7 +21,6 @@ import {
   useFirestoreCollectionData,
   useStorage,
 } from "reactfire";
-import { dateToTimestamp } from "../utils";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export type CURRENCY_TYPES = "INR" | "USD" | "EUR";
@@ -45,22 +47,28 @@ export type Course = {
   language?: string;
   content_url: string;
   created_at: Timestamp;
-  creator: string;
   currency: CURRENCY_TYPES;
   description: string;
   price: number;
   thumbnail?: string;
   title: string;
   updated_at: Timestamp;
-  ratings?: CourseRatings;
-  category: CategoryIds;
   averageRatings: number;
+  ratings?: CourseRatings;
+  category: { id: string; title: string };
   author: Author;
   start: {
     date?: Timestamp;
     isRecorded?: boolean;
     isLive?: boolean;
   };
+};
+
+export type Request = {
+  id: string;
+  url: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 };
 
 function useCoursesCollection() {
@@ -71,6 +79,11 @@ function useCoursesCollection() {
 export function useCourseDocument(courseId: string) {
   const coursesCollection = useCoursesCollection();
   return doc(coursesCollection, courseId);
+}
+
+export function useCourseRequestCollection() {
+  const store = useFirestore();
+  return collection(store, "Requests") as CollectionReference<Request>;
 }
 
 export function useTopCourses() {
@@ -114,9 +127,15 @@ export type OrderDateBy = "latest" | "oldest";
 
 export type RatingsFilter = "high_to_low" | "low_to_high";
 
+export type Pagination = {
+  lastItem: QueryDocumentSnapshot | null;
+  emptied?: boolean;
+  limit: number;
+};
+
 export type TCourseByCategoryParams = {
   q?: string;
-  categoryId: CategoryIds;
+  categoryId: string;
   orderDateBy?: OrderDateBy;
   ratings?: RatingsFilter;
 };
@@ -132,7 +151,12 @@ export function useCoursesByCategory(
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCalled, setIsCalled] = useState<boolean>(false);
+  const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false);
   const coursesCollection = useCoursesCollection();
+  const [pagination, setPagination] = useState<Pagination>({
+    limit: 20,
+    lastItem: null,
+  });
 
   const initialSearchParams = useMemo(() => {
     if (!initialSearchParamsProps) return initialParams;
@@ -154,7 +178,7 @@ export function useCoursesByCategory(
     try {
       const coursesQuery = query(
         coursesCollection,
-        where("category", "==", params.categoryId),
+        where("category.id", "==", params.categoryId),
         orderBy(
           "averageRatings",
           params?.ratings === "high_to_low" ? "desc" : "asc"
@@ -163,10 +187,17 @@ export function useCoursesByCategory(
           "updated_at",
           params?.orderDateBy === "oldest" ? "asc" : "desc"
         ),
-        limit(10)
+        limit(pagination.limit)
       );
-      const courseDocs = (await getDocs(coursesQuery)).docs;
-      setCourses(courseDocs.map((doc) => doc.data()));
+      const courseDocsRefs = (await getDocs(coursesQuery)).docs;
+      setPagination((prev) => {
+        return {
+          ...prev,
+          emptied: courseDocsRefs.length < pagination.limit,
+          lastItem: courseDocsRefs[courseDocsRefs.length - 1],
+        };
+      });
+      setCourses(courseDocsRefs.map((doc) => doc.data()));
       setIsLoading(false);
     } catch (e) {
       setCourses([]);
@@ -174,11 +205,57 @@ export function useCoursesByCategory(
       throw e;
     }
   }, [
-    params.categoryId,
     coursesCollection,
-    params?.orderDateBy,
+    params.categoryId,
     params?.ratings,
+    params?.orderDateBy,
+    pagination,
   ]);
+
+  const getMoreCourses = useCallback(async () => {
+    setIsFetchingMore(true);
+    try {
+      const coursesQuery = query(
+        coursesCollection,
+        where("category.id", "==", params.categoryId),
+        orderBy(
+          "averageRatings",
+          params?.ratings === "high_to_low" ? "desc" : "asc"
+        ),
+        orderBy(
+          "updated_at",
+          params?.orderDateBy === "oldest" ? "asc" : "desc"
+        ),
+        startAfter(pagination.lastItem),
+        limit(pagination.limit)
+      );
+      const courseDocsRefs = (await getDocs(coursesQuery)).docs;
+      setPagination((prev) => {
+        return {
+          ...prev,
+          emptied: courseDocsRefs.length < pagination.limit,
+          lastItem: courseDocsRefs[courseDocsRefs.length - 1],
+        };
+      });
+      setCourses((prev) =>
+        [...prev].concat(courseDocsRefs.map((doc) => doc.data()))
+      );
+      setIsFetchingMore(false);
+    } catch (e) {
+      setIsFetchingMore(false);
+      throw e;
+    }
+  }, [
+    coursesCollection,
+    params.categoryId,
+    params?.ratings,
+    params?.orderDateBy,
+    pagination,
+  ]);
+
+  function loadMore() {
+    getMoreCourses();
+  }
 
   useEffect(() => {
     if (!isCalled) {
@@ -189,7 +266,7 @@ export function useCoursesByCategory(
 
   function handleParamChange(
     key: string,
-    value: CategoryIds | OrderDateBy | RatingsFilter
+    value: string | OrderDateBy | RatingsFilter
   ) {
     setFieldValue(key, value);
     setIsCalled(false);
@@ -199,7 +276,11 @@ export function useCoursesByCategory(
     params,
     courses,
     isLoading,
+    isFetchingMore,
 
+    pagination,
+
+    loadMore,
     setFieldValue: handleParamChange,
   };
 }
@@ -366,13 +447,33 @@ export function useAddNewCourse() {
           id: docRef.id,
           averageRatings: 0,
           thumbnail: `${imageUrl || pathRef.fullPath || image.name}`,
-          updated_at: dateToTimestamp(new Date()),
-          created_at: dateToTimestamp(new Date()),
+          updated_at: serverTimestamp(),
+          created_at: serverTimestamp(),
         });
       } catch (e) {
         throw e as Error;
       }
     },
     [docRef, storage]
+  );
+}
+
+export function useAddRequest() {
+  const requestsCollection = useCourseRequestCollection();
+  return useCallback(
+    async (courseUrl: string) => {
+      try {
+        const docRef = doc(requestsCollection);
+        await setDoc(docRef, {
+          id: docRef.id,
+          url: courseUrl,
+          updated_at: serverTimestamp(),
+          created_at: serverTimestamp(),
+        });
+      } catch (e) {
+        throw e as Error;
+      }
+    },
+    [requestsCollection]
   );
 }

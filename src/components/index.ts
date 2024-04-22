@@ -37,7 +37,9 @@ import { ProgressBar } from "./Ratings";
 
 import { SearchSelect } from "./Select";
 
-import { PageMeta, DeferRending } from "./Page";
+import { PageMeta, DeferRendering } from "./Page";
+
+import { Tooltip } from "./Tooltip";
 
 export {
   Box,
@@ -87,5 +89,8 @@ export {
 
   //Page metadata
   PageMeta,
-  DeferRending,
+  DeferRendering,
+
+  //Tooltips
+  Tooltip,
 };

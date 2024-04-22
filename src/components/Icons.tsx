@@ -185,6 +185,14 @@ export function SoftwareDevelopmentIcon(props: IconProps) {
   );
 }
 
+export function MusicIcon(props: IconProps) {
+  return (
+    <Icon {...props} fill="currentColor" viewBox="0 -960 960 960">
+      <path d="M560-160q-66 0-113-47t-47-113q0-66 47-113t113-47q23 0 42.5 5.5T640-458v-342h240v120H720v360q0 66-47 113t-113 47ZM80-320q0-99 38-186.5T221-659q65-65 152.5-103T560-800v80q-82 0-155 31.5t-127.5 86q-54.5 54.5-86 127T160-320H80Zm160 0q0-66 25.5-124.5t69-102Q378-590 436-615t124-25v80q-100 0-170 70t-70 170h-80Z" />
+    </Icon>
+  );
+}
+
 export function DesigningIcon(props: IconProps) {
   return (
     <Icon {...props} fill="currentColor" viewBox="0 -960 960 960">
@@ -474,6 +482,19 @@ export function InformationCircleFilledIcon(props: IconProps) {
   );
 }
 
+export function InformationCircleIcon(props: IconProps) {
+  return (
+    <Icon {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </Icon>
+  );
+}
+
 export function InformationWarningIcon(props: IconProps) {
   return (
     <Icon {...props} fill="none" viewBox="0 0 32 29" stroke="currentColor">
@@ -489,6 +510,14 @@ export function ArrowDropDownIcon(props: IconProps) {
   return (
     <Icon {...props} fill="currentColor" viewBox="0 0 24 24">
       <path opacity="0.995" d="M7 10L12 15L17 10H7Z" fill="currentColor" />
+    </Icon>
+  );
+}
+
+export function DocumentIcon(props: IconProps) {
+  return (
+    <Icon {...props} fill="currentColor" viewBox="0 -960 960 960">
+      <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h168q13-36 43.5-58t68.5-22q38 0 68.5 22t43.5 58h168q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm80-80h280v-80H280v80Zm0-160h400v-80H280v80Zm0-160h400v-80H280v80Zm200-190q13 0 21.5-8.5T510-820q0-13-8.5-21.5T480-850q-13 0-21.5 8.5T450-820q0 13 8.5 21.5T480-790ZM200-200v-560 560Z" />
     </Icon>
   );
 }

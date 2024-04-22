@@ -1,27 +1,6 @@
 import { Box, Inline, ProgressBar, Stack, Text } from "../components";
-import {
-  DesigningIcon,
-  Icon,
-  IconProps,
-  SoftwareDevelopmentIcon,
-  StarIcon,
-} from "../components/Icons";
-import { CategoryIds, CourseRatings } from "../data/courses";
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function getCategoryIcon({
-  id,
-  ...props
-}: IconProps & { id: CategoryIds }) {
-  switch (id) {
-    case "software_development":
-      return <SoftwareDevelopmentIcon {...props} />;
-    case "software_design":
-      return <DesigningIcon {...props} />;
-    default:
-      return null;
-  }
-}
+import { Icon, StarIcon } from "../components/Icons";
+import { CourseRatings } from "../data/courses";
 
 export function Stars({
   rating,
@@ -87,6 +66,62 @@ export function ProgressBars({ ratings }: { ratings: CourseRatings }) {
               />
             ))}
           </Inline>
+          <Box width="full" maxWidth="lg">
+            <ProgressBar
+              backgroundColor={
+                i === 5
+                  ? "surfaceSuccess"
+                  : i === 1
+                  ? "surfaceError"
+                  : "ratingColor"
+              }
+              percentage={`${percentageSummary[i] || 0}%`}
+            />
+          </Box>
+          <Box width="24">
+            <Text color="textLow" className="whitespace-pre" fontSize="c1">
+              {`${summary[i] || 0} | ${percentageSummary[i] || 0} %`}{" "}
+            </Text>
+          </Box>
+        </Inline>
+      ))}
+    </Stack>
+  );
+}
+
+export function ProgressBarsForSmallScreens({
+  ratings,
+}: {
+  ratings: CourseRatings;
+}) {
+  const summary = getRatingsSummary(ratings);
+  const percentageSummary: { [key: number]: number } = {};
+  Object.keys(summary).forEach((key) => {
+    const numKey = Number(key);
+    const numVal = summary[numKey];
+    percentageSummary[numKey] = Number(
+      ((numVal / ratings.length) * 100).toFixed(0)
+    );
+  });
+  return (
+    <Stack width="full" gap="2">
+      {[5, 4, 3, 2, 1].map((i) => (
+        <Inline key={i} gap="4" alignItems="center">
+          <Box className="inline-block lg:hidden">
+            <Inline gap="2" alignItems="center">
+              <Text fontSize="c1">{i}</Text>
+              <StarIcon
+                size="3"
+                color={
+                  i === 5
+                    ? "iconSuccess"
+                    : i === 1
+                    ? "iconError"
+                    : "ratingColor"
+                }
+              />
+            </Inline>
+          </Box>
           <Box width="full" maxWidth="lg">
             <ProgressBar
               backgroundColor={

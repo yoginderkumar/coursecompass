@@ -6,6 +6,7 @@ import {
   getDocs,
   orderBy,
   query,
+  serverTimestamp,
   setDoc,
 } from "firebase/firestore";
 import {
@@ -14,13 +15,13 @@ import {
   ref,
   uploadBytes,
 } from "firebase/storage";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   useFirestore,
   useFirestoreCollectionData,
   useStorage,
 } from "reactfire";
-import { dateToTimestamp, useMount } from "../utils";
+import { useMount } from "../utils";
 
 export type Socials =
   | "linkedin"
@@ -35,6 +36,8 @@ export type AuthorSocial = {
   value: string;
 };
 
+export type AuthorRatings = { value: number; uid: string }[];
+
 export type Author = {
   uid: string;
   name: string;
@@ -43,6 +46,8 @@ export type Author = {
   updated_at: Timestamp;
   reference_uid?: string;
   socials: AuthorSocial[];
+  averageRatings: number;
+  ratings?: AuthorRatings;
 };
 
 function useAuthorsCollection() {
@@ -57,7 +62,12 @@ export function useAuthorDocument(authorId: string) {
 
 type AddAuthorPayload = Omit<
   Author,
-  "displayPicture" | "reference_uid" | "created_at" | "updated_at" | "uid"
+  | "displayPicture"
+  | "reference_uid"
+  | "created_at"
+  | "updated_at"
+  | "uid"
+  | "averageRatings"
 > & {
   image?: string;
   imageFile?: File;
@@ -89,9 +99,10 @@ export function useAddAuthor() {
           ...rest,
           uid: authorDocRef.id,
           displayPicture: imageUrl,
+          averageRatings: 0,
           reference_uid: userId || authorDocRef.id,
-          updated_at: dateToTimestamp(new Date()),
-          created_at: dateToTimestamp(new Date()),
+          updated_at: serverTimestamp(),
+          created_at: serverTimestamp(),
         });
       } catch (e) {
         throw e as Error;
@@ -110,6 +121,43 @@ export function useAuthors() {
 
   return {
     authors,
+  };
+}
+
+export function usePopularAuthors() {
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCalled, setIsCalled] = useState<boolean>(false);
+  const authorsCollection = useAuthorsCollection();
+
+  const getAuthors = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const coursesQuery = query(
+        authorsCollection,
+        orderBy("averageRatings", "desc"),
+        orderBy("updated_at", "desc")
+      );
+      const authorDocs = (await getDocs(coursesQuery)).docs;
+      setAuthors(authorDocs.map((doc) => doc.data()));
+      setIsLoading(false);
+    } catch (e) {
+      setAuthors([]);
+      setIsLoading(false);
+      throw e;
+    }
+  }, [authorsCollection]);
+
+  useEffect(() => {
+    if (!isCalled) {
+      setIsCalled(true);
+      getAuthors();
+    }
+  }, [getAuthors, isCalled]);
+
+  return {
+    authors,
+    isLoading,
   };
 }
 

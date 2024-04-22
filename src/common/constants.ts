@@ -8,7 +8,7 @@ export const categories: Array<{ id: CategoryIds; title: string }> = [
   { id: "marketing", title: "Marketing" },
 ];
 
-export const categoryTitlesMapped: { [key in CategoryIds]: string } = {
+export const categoryTitlesMapped: { [key: string]: string } = {
   software_development: "Software Development",
   software_design: "Software Design",
   personal_development: "Personal Development",

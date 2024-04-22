@@ -8,13 +8,14 @@ import {
   limit,
   orderBy,
   query,
+  serverTimestamp,
+  startAfter,
   where,
   writeBatch,
 } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { useFirestore } from "reactfire";
-import { dateToTimestamp } from "../utils";
-import { useCourseDocument } from "./courses";
+import { Pagination, useCourseDocument } from "./courses";
 
 export type Review = {
   id: string;
@@ -46,6 +47,11 @@ export function useReviews(courseId: string) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCalled, setIsCalled] = useState<boolean>(false);
+  const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<Pagination>({
+    limit: 20,
+    lastItem: null,
+  });
   const reviewsCollection = useReviewsCollection();
 
   const getReviews = useCallback(async () => {
@@ -55,17 +61,56 @@ export function useReviews(courseId: string) {
         reviewsCollection,
         where("courseId", "==", courseId),
         orderBy("created_at", "desc"),
-        limit(10)
+        limit(pagination.limit)
       );
-      const reviewsData = (await getDocs(reviewsQuery)).docs;
-      setReviews(reviewsData.map((review) => review.data()));
+      const reviewDocs = (await getDocs(reviewsQuery)).docs;
+      setPagination((prev) => {
+        return {
+          ...prev,
+          emptied: reviewDocs.length < pagination.limit,
+          lastItem: reviewDocs[reviewDocs.length - 1],
+        };
+      });
+      setReviews(reviewDocs.map((reviewDoc) => reviewDoc.data()));
       setIsLoading(false);
     } catch (e) {
       setReviews([]);
       setIsLoading(false);
       throw e;
     }
-  }, [courseId, reviewsCollection]);
+  }, [courseId, reviewsCollection, pagination.limit]);
+
+  const getMoreReviews = useCallback(async () => {
+    setIsFetchingMore(true);
+    try {
+      const reviewsQuery = query(
+        reviewsCollection,
+        where("courseId", "==", courseId),
+        orderBy("created_at", "desc"),
+        startAfter(pagination.lastItem),
+        limit(pagination.limit)
+      );
+      const reviewsDocs = (await getDocs(reviewsQuery)).docs;
+      setPagination((prev) => {
+        return {
+          ...prev,
+          emptied: reviewsDocs.length < pagination.limit,
+          lastItem: reviewsDocs[reviewsDocs.length - 1],
+        };
+      });
+      setReviews((prev) =>
+        prev.concat(reviewsDocs.map((review) => review.data()))
+      );
+      setIsFetchingMore(false);
+    } catch (e) {
+      setIsFetchingMore(false);
+      throw e;
+    }
+  }, [reviewsCollection, courseId, pagination.lastItem, pagination.limit]);
+
+  function handleLoadMoreReviews() {
+    getMoreReviews();
+  }
 
   useEffect(() => {
     if (!isCalled) {
@@ -81,8 +126,11 @@ export function useReviews(courseId: string) {
   return {
     reviews,
     isLoading,
+    pagination,
+    isFetchingMore,
 
     reload,
+    handleLoadMoreReviews,
   };
 }
 
@@ -103,8 +151,8 @@ export function useAddRatingAndReview(courseId: string) {
           rating,
           description,
           title,
-          created_at: dateToTimestamp(new Date()),
-          updated_at: dateToTimestamp(new Date()),
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
         });
         const data = await (await getDoc(courseDocRef)).data();
         const ratings = data?.ratings?.length
@@ -119,7 +167,7 @@ export function useAddRatingAndReview(courseId: string) {
               .toFixed(1)
           ) || 0;
         batch.update(courseDocRef, {
-          updated_at: dateToTimestamp(new Date()),
+          updated_at: serverTimestamp(),
           ratings: ratings,
           averageRatings: averageRating,
         });

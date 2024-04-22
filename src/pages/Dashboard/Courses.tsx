@@ -83,7 +83,7 @@ function MyCourses({
                   <Stack gap="1">
                     <Text fontSize="b1">{course.title}</Text>
                     <Inline gap="2" fontSize="c1" className="text-gray-800">
-                      <Text>By: {course.creator}</Text>
+                      <Text>By: {course.author.name}</Text>
                       <Text>|</Text>
                       {/* <Text>
                       Launched On: <Time timeStamp={course.started_at} />
