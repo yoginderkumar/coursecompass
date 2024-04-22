@@ -35,7 +35,7 @@ export type TUser = {
   created_at?: string;
   updated_at?: string;
   emailVerified?: boolean;
-  providerId: "firebase";
+  providerId: "firebase" | "mail" | "google";
   role: UserRoles;
 };
 
@@ -59,7 +59,7 @@ export function useLoginCredentials() {
       const credentials = await signInWithPopup(auth, provider);
       const isNewUser = getAdditionalUserInfo(credentials)?.isNewUser;
       if (isNewUser) {
-        await createProfile(auth);
+        await createProfile(auth, {}, "google");
         return true;
       }
       return true;
@@ -92,7 +92,7 @@ export function useLoginCredentials() {
     }) => {
       try {
         await createUserWithEmailAndPassword(auth, email, password);
-        await createProfile(auth, { name });
+        await createProfile(auth, { name }, "mail");
         return true;
       } catch (e) {
         throw handleFirebaseAuthError(e as AuthError);
@@ -111,7 +111,11 @@ export function useLoginCredentials() {
 export function useCreateProfile() {
   const usersCollection = useUsersCollection();
   return useCallback(
-    async (authUser: Auth, data?: Optional<TUser>) => {
+    async (
+      authUser: Auth,
+      data?: Optional<TUser>,
+      provider?: "mail" | "google"
+    ) => {
       const { currentUser } = authUser;
       const userDoc = doc(usersCollection, currentUser?.uid || "missing");
       if (!currentUser) throw new Error("Please login to create profile");
@@ -126,7 +130,7 @@ export function useCreateProfile() {
           created_at: currentUser.metadata?.creationTime,
           updated_at: currentUser.metadata?.lastSignInTime,
           emailVerified: currentUser.emailVerified || false,
-          providerId: "firebase",
+          providerId: provider || "firebase",
         };
         if (data?.name) {
           // update the auth profile
