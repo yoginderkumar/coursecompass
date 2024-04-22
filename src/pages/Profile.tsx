@@ -9,9 +9,10 @@ import {
   Text,
 } from "../components";
 import { getInitials } from "../utils";
-import { SuspenseWithPerf } from "reactfire";
+import { SuspenseWithPerf, useAuth } from "reactfire";
 import { useNavigate } from "react-router-dom";
 import { LogoutIcon } from "../components/Icons";
+import { signOut } from "firebase/auth";
 
 export default function ProfilePage() {
   const { user } = useProfile();
@@ -27,6 +28,7 @@ export default function ProfilePage() {
 }
 
 function Profile({ user }: { user: TUser }) {
+  const auth = useAuth();
   const user_initials = getInitials(user.name);
   const navigate = useNavigate();
   return (
@@ -34,7 +36,7 @@ function Profile({ user }: { user: TUser }) {
       width="full"
       display="flex"
       paddingY="8"
-      className="h-[62svh]"
+      className="md:h-[62svh]"
       justifyContent="center"
     >
       {user?.uid ? (
@@ -46,7 +48,7 @@ function Profile({ user }: { user: TUser }) {
           rounded="lg"
           backgroundColor="surfaceBase"
         >
-          <Inline gap="4">
+          <Inline gap="4" flexDirection={{ xs: "col", md: "row" }}>
             <Avatar
               size="18"
               id={user.uid}
@@ -63,17 +65,24 @@ function Profile({ user }: { user: TUser }) {
                 <Text>{user?.email}</Text>
               </Stack>
               <Stack gap="4">
-                <Button
-                  level="primary"
-                  onClick={() => {
-                    navigate("/dashboard");
-                  }}
-                >
-                  Visit Dashboard
-                </Button>
+                {user.role === "user" ? null : (
+                  <Button
+                    level="primary"
+                    onClick={() => {
+                      navigate("/dashboard");
+                    }}
+                  >
+                    Visit Dashboard
+                  </Button>
+                )}
+
                 <Inline gap="4">
                   <Button>Edit Profile</Button>
-                  <Button level="primary" status="danger">
+                  <Button
+                    level="primary"
+                    status="danger"
+                    onClick={() => signOut(auth)}
+                  >
                     <LogoutIcon />
                     Logout
                   </Button>

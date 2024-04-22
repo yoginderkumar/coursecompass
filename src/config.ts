@@ -1,5 +1,7 @@
 const config = {
   app: "Course Compass",
+  github: "https://github.com/yoginderkumar/coursecompass",
+  email: "coursecompass.fyi@gmail.com",
   firebaseConfig: {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,

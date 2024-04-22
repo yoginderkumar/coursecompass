@@ -21,6 +21,7 @@ import { getInitials } from "./utils";
 import { signOut } from "firebase/auth";
 import { useMemo } from "react";
 import { USER_PERMISSIONS, checkIfUserCan, useProfile } from "./data";
+import { RequestCourseInModal } from "./Courses";
 
 export function Navigation() {
   const auth = useAuth();
@@ -29,93 +30,164 @@ export function Navigation() {
   const initials = getInitials(user?.displayName || "CC");
 
   return (
-    <Stack paddingX="8">
-      <Box as="nav" paddingY="4">
-        <Inline alignItems="center" justifyContent="between">
-          <Inline width="full" gap="3" alignItems="center" as={Link} to="/">
-            <Text as="span" fontSize="h5">
-              🧭
-            </Text>
-            <Text as="h5" fontSize="h5" color="textPrimary">
-              {config.app}
-            </Text>
-          </Inline>
+    <Stack>
+      <Box paddingX="8">
+        <Box as="nav" paddingY="4">
+          <Inline alignItems="center" justifyContent="between">
+            <Inline width="full" gap="3" alignItems="center" as={Link} to="/">
+              <Text as="span" fontSize="h5">
+                🧭
+              </Text>
+              <Text
+                as="h5"
+                fontSize={{ xs: "s3", md: "h5" }}
+                color="textPrimary"
+              >
+                {config.app}
+              </Text>
+            </Inline>
 
-          <Inline gap="6" width="full" justifyContent="end" alignItems="center">
-            {!user?.uid ? (
-              <Inline gap="4">
-                <LoginOrRegisterInModal>
-                  {({ onOpen }) => (
-                    <Button level="primary" onClick={() => onOpen("login")}>
-                      Login
-                    </Button>
+            <Box className="hidden md:block"></Box>
+            <Inline
+              gap="6"
+              width="full"
+              justifyContent="end"
+              alignItems="center"
+            >
+              <Box className="hidden md:block">
+                <RequestCourseInModal>
+                  {({ add }) => (
+                    <Box cursor="pointer" onClick={add}>
+                      <Text
+                        color="textLow"
+                        className="underline underline-offset-2"
+                        fontSize="b3"
+                      >
+                        Request a course?
+                      </Text>
+                    </Box>
                   )}
-                </LoginOrRegisterInModal>
-                <Button>Sign up</Button>
-              </Inline>
-            ) : (
-              <Box>
-                <Menu>
-                  <MenuButton inline>
-                    <Avatar
-                      size="10"
-                      id={user.uid}
-                      initials={initials}
-                      image={user?.photoURL || undefined}
-                    />
-                  </MenuButton>
-                  <MenuList align="bottom-right">
-                    <MenuLink to="/profile">
-                      <Inline alignItems="center" gap="4">
-                        <Box>
-                          <Stack
-                            size="12"
-                            justifyContent="center"
-                            alignItems="center"
-                            rounded="full"
-                            bgColor="surfacePrimaryLowest"
-                          >
-                            <Text
-                              textTransform="uppercase"
-                              fontSize="b3"
-                              color="textPrimary"
+                </RequestCourseInModal>
+              </Box>
+
+              {!user?.uid ? (
+                <Inline gap="4">
+                  <LoginOrRegisterInModal>
+                    {({ onOpen }) => (
+                      <Button level="primary" onClick={() => onOpen("login")}>
+                        Login
+                      </Button>
+                    )}
+                  </LoginOrRegisterInModal>
+                  <LoginOrRegisterInModal>
+                    {({ onOpen }) => (
+                      <Button onClick={() => onOpen("signup")}>Sign up</Button>
+                    )}
+                  </LoginOrRegisterInModal>
+                </Inline>
+              ) : (
+                <Box>
+                  <Menu>
+                    <MenuButton inline>
+                      <Avatar
+                        size="10"
+                        id={user.uid}
+                        initials={initials}
+                        image={user?.photoURL || undefined}
+                      />
+                    </MenuButton>
+                    <MenuList align="bottom-right">
+                      <MenuLink to="/profile">
+                        <Inline alignItems="center" gap="4">
+                          <Box>
+                            <Stack
+                              size="12"
+                              justifyContent="center"
+                              alignItems="center"
+                              rounded="full"
+                              bgColor="surfacePrimaryLowest"
                             >
-                              {user.displayName ? user.displayName[0] : "CC"}
+                              <Text
+                                textTransform="uppercase"
+                                fontSize="b3"
+                                color="textPrimary"
+                              >
+                                {user.displayName ? user.displayName[0] : "CC"}
+                              </Text>
+                            </Stack>
+                          </Box>
+                          <Stack gap="1">
+                            <Text as="h4">{user.displayName || `User`}</Text>
+                            <Text
+                              fontSize="c1"
+                              color="textMedium"
+                              className="tracking-wider whitespace-pre"
+                            >
+                              {user.email}
+                            </Text>
+                            <Text fontSize="c4" color="textPrimary">
+                              Your Profile{" "}
                             </Text>
                           </Stack>
-                        </Box>
-                        <Stack gap="1">
-                          <Text as="h4">{user.displayName || `User`}</Text>
-                          <Text
-                            fontSize="c1"
-                            color="textMedium"
-                            className="tracking-wider whitespace-pre"
-                          >
-                            {user.email}
-                          </Text>
-                          <Text fontSize="c4" color="textPrimary">
-                            Your Profile{" "}
-                          </Text>
-                        </Stack>
-                      </Inline>
-                    </MenuLink>
-                    <MenuItemHeader className="border-t mt-2">
-                      Settings
-                    </MenuItemHeader>
-                    <MenuItem action="logout" onClick={() => signOut(auth)}>
-                      <Inline gap="2" alignItems="center">
-                        <LogoutIcon /> <Text fontSize="b3">Logout</Text>
-                      </Inline>
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
-              </Box>
-            )}
+                        </Inline>
+                      </MenuLink>
+                      <MenuItemHeader className="border-t mt-2">
+                        Settings
+                      </MenuItemHeader>
+                      <MenuItem action="logout" onClick={() => signOut(auth)}>
+                        <Inline gap="2" alignItems="center">
+                          <LogoutIcon /> <Text fontSize="b3">Logout</Text>
+                        </Inline>
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+                </Box>
+              )}
+            </Inline>
           </Inline>
-        </Inline>
-      </Box>
-      <Box as="main">
-        <Outlet />
+        </Box>
+        <Box as="main">
+          <Outlet />
+        </Box>
+        <Stack
+          as="footer"
+          gap="6"
+          paddingY="24"
+          width="full"
+          alignItems="center"
+        >
+          <Box
+            backgroundColor="surfaceBase"
+            height="2"
+            rounded="full"
+            width="1/3"
+          ></Box>
+          <Stack gap="3" alignItems="center">
+            <Text>
+              Found an issue?{" "}
+              <Text
+                as="a"
+                color="textAlt1"
+                fontSize="b1"
+                cursor="pointer"
+                href={config.github}
+                target="_blank"
+                fontWeight="bold"
+              >
+                Fix it on GitHub
+              </Text>
+            </Text>
+            <Text>
+              Need Help?{" "}
+              <Text as="span" fontSize="b1" fontWeight="bold">
+                {config.email}
+              </Text>
+            </Text>
+          </Stack>
+          <Text fontSize="c1" color="textLow">
+            Copyright &#169; {new Date().getFullYear()} {config.app}
+          </Text>
+        </Stack>
       </Box>
     </Stack>
   );
@@ -150,6 +222,9 @@ export default function DashboardSideBar() {
     if (checkIfUserCan(user.role, USER_PERMISSIONS.ADD_AUTHOR)) {
       if (!updatedMenu.find((menuItem) => menuItem.path === "authors")?.title) {
         updatedMenu.push({ path: "authors", title: "Authors" });
+      }
+      if (!updatedMenu.find((menu) => menu.path === "categories")?.title) {
+        updatedMenu.push({ path: "categories", title: "Categories" });
       }
     }
     return updatedMenu;

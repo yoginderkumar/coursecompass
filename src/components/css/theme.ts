@@ -20,6 +20,7 @@ const LIGHT_COLORS = {
   blue70: "#3A4FAA",
   blue80: "#2B3B7F",
   blue90: "#1D2855",
+  blueDark: "#1a1b25",
 
   //Green
   green5: "#F3FAF6",
@@ -84,6 +85,7 @@ export const COLORS = {
   surfaceNeutral: LIGHT_COLORS.grey70,
   surfaceNeutralLowest: LIGHT_COLORS.grey10,
   surfaceBase: LIGHT_COLORS.grey80,
+  surfaceMain: LIGHT_COLORS.blueDark,
 
   //Borders
   borderOutline: LIGHT_COLORS.grey30,

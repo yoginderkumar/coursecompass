@@ -21,6 +21,7 @@ import AllCoursesPage from "./pages/AllCourses";
 import { getStorage } from "firebase/storage";
 import DashboardAuthorsPage from "./pages/Dashboard/Authors";
 import { ProtectedRoutes } from "./Auth";
+import DashboardCategoriesPage from "./pages/Dashboard/Categories";
 
 function CourseCompassApp() {
   const firebaseApp = useFirebaseApp();
@@ -58,6 +59,10 @@ function CourseCompassApp() {
                 <Route path="courses" element={<DashboardCoursesPage />} />
                 <Route path="authors" element={<DashboardAuthorsPage />} />
                 <Route path="reviews" element={<DashboardReviewsPage />} />
+                <Route
+                  path="categories"
+                  element={<DashboardCategoriesPage />}
+                />
               </Route>
             </Route>
           </Routes>

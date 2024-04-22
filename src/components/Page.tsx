@@ -23,7 +23,7 @@ export function PageMeta({
   );
 }
 
-export function DeferRending({
+export function DeferRendering({
   timeout = 300,
   className,
   children,
