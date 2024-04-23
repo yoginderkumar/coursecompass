@@ -12,8 +12,7 @@ import {
   Text,
   Time,
 } from "../components";
-import { RatingsFilter, useCoursesByCategory } from "../data";
-import { categories, categoryTitlesMapped } from "../common/constants";
+import { RatingsFilter, useCategories, useCoursesByCategory } from "../data";
 import {
   ArrowDownIcon,
   DocumentIcon,
@@ -23,6 +22,7 @@ import {
 import { Link } from "react-router-dom";
 import { Amount } from "../common/Amount";
 import { CourseCard } from "../Courses";
+import { useMemo } from "react";
 
 const ratingsOptions: Array<{ id: RatingsFilter; title: string }> = [
   { id: "high_to_low", title: "Highest to Lowest" },
@@ -39,6 +39,12 @@ export default function AllCoursesPage() {
     loadMore,
     setFieldValue,
   } = useCoursesByCategory();
+  const { categories } = useCategories();
+
+  const categoriesForOptions = useMemo(() => {
+    return [{ id: "all", title: "All" }].concat(categories);
+  }, [categories]);
+
   return (
     <>
       <PageMeta title="All Courses" />
@@ -85,16 +91,18 @@ export default function AllCoursesPage() {
                   <Menu>
                     <MenuButton inline>
                       <Inline alignItems="center" color="textOnSurface">
-                        <Text>{categoryTitlesMapped?.[params.categoryId]}</Text>
+                        <Text>{params.category.title}</Text>
                         <ArrowDownIcon color="iconMedium" />
                       </Inline>
                     </MenuButton>
                     <MenuList align="bottom-right">
-                      {categories.map(({ id, title }) => (
+                      {categoriesForOptions.map(({ id, title }) => (
                         <MenuItem
                           action={id}
                           key={id}
-                          onClick={() => setFieldValue("categoryId", id)}
+                          onClick={() =>
+                            setFieldValue("category", { id, title })
+                          }
                         >
                           <Text fontSize="b3" className="whitespace-pre">
                             {title}
@@ -142,12 +150,12 @@ export default function AllCoursesPage() {
                 <Menu>
                   <MenuButton inline>
                     <Inline alignItems="center" color="textOnSurface">
-                      <Text>{categoryTitlesMapped?.[params.categoryId]}</Text>
+                      <Text>{params.category.title}</Text>
                       <ArrowDownIcon color="iconMedium" />
                     </Inline>
                   </MenuButton>
                   <MenuList align="bottom-right">
-                    {categories.map(({ id, title }) => (
+                    {categoriesForOptions.map(({ id, title }) => (
                       <MenuItem
                         action={id}
                         key={id}
