@@ -208,7 +208,11 @@ function AddAuthorForm({ close }: { close?: () => void }) {
                           socials[i].value = e.currentTarget.value;
                           setFieldValue("socials", socials);
                         }}
-                        placeholder="Enter course price"
+                        placeholder={
+                          social.id === "email"
+                            ? "Eg. author@gmail.com"
+                            : "Enter a valid url"
+                        }
                       />
                     </Inline>
                   ))}

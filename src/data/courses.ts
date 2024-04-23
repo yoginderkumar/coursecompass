@@ -133,14 +133,18 @@ export type Pagination = {
   limit: number;
 };
 
+type CategoryForFilter = {
+  id: string;
+  title: string;
+};
 export type TCourseByCategoryParams = {
   q?: string;
-  categoryId: string;
+  category: CategoryForFilter;
   orderDateBy?: OrderDateBy;
   ratings?: RatingsFilter;
 };
 export const initialParams: TCourseByCategoryParams = {
-  categoryId: "software_development",
+  category: { id: "all", title: "All" },
   orderDateBy: "latest",
   ratings: "high_to_low",
 };
@@ -163,8 +167,7 @@ export function useCoursesByCategory(
     return {
       ...initialParams,
       ...initialSearchParamsProps,
-      categoryId:
-        initialSearchParamsProps.categoryId || initialParams.categoryId,
+      category: initialSearchParamsProps.category || initialParams.category,
     };
   }, [initialSearchParamsProps]);
 
@@ -176,28 +179,52 @@ export function useCoursesByCategory(
   const getCoursesByCategory = useCallback(async () => {
     setIsLoading(true);
     try {
-      const coursesQuery = query(
-        coursesCollection,
-        where("category.id", "==", params.categoryId),
-        orderBy(
-          "averageRatings",
-          params?.ratings === "high_to_low" ? "desc" : "asc"
-        ),
-        orderBy(
-          "updated_at",
-          params?.orderDateBy === "oldest" ? "asc" : "desc"
-        ),
-        limit(pagination.limit)
-      );
-      const courseDocsRefs = (await getDocs(coursesQuery)).docs;
-      setPagination((prev) => {
-        return {
-          ...prev,
-          emptied: courseDocsRefs.length < pagination.limit,
-          lastItem: courseDocsRefs[courseDocsRefs.length - 1],
-        };
-      });
-      setCourses(courseDocsRefs.map((doc) => doc.data()));
+      if (params.category.id === "all") {
+        const coursesQuery = query(
+          coursesCollection,
+          orderBy(
+            "averageRatings",
+            params?.ratings === "high_to_low" ? "desc" : "asc"
+          ),
+          orderBy(
+            "updated_at",
+            params?.orderDateBy === "oldest" ? "asc" : "desc"
+          ),
+          limit(pagination.limit)
+        );
+        const courseDocsRefs = (await getDocs(coursesQuery)).docs;
+        setPagination((prev) => {
+          return {
+            ...prev,
+            emptied: courseDocsRefs.length < pagination.limit,
+            lastItem: courseDocsRefs[courseDocsRefs.length - 1],
+          };
+        });
+        setCourses(courseDocsRefs.map((doc) => doc.data()));
+      } else {
+        const coursesQuery = query(
+          coursesCollection,
+          where("category.id", "==", params.category.id),
+          orderBy(
+            "averageRatings",
+            params?.ratings === "high_to_low" ? "desc" : "asc"
+          ),
+          orderBy(
+            "updated_at",
+            params?.orderDateBy === "oldest" ? "asc" : "desc"
+          ),
+          limit(pagination.limit)
+        );
+        const courseDocsRefs = (await getDocs(coursesQuery)).docs;
+        setPagination((prev) => {
+          return {
+            ...prev,
+            emptied: courseDocsRefs.length < pagination.limit,
+            lastItem: courseDocsRefs[courseDocsRefs.length - 1],
+          };
+        });
+        setCourses(courseDocsRefs.map((doc) => doc.data()));
+      }
       setIsLoading(false);
     } catch (e) {
       setCourses([]);
@@ -206,7 +233,7 @@ export function useCoursesByCategory(
     }
   }, [
     coursesCollection,
-    params.categoryId,
+    params.category,
     params?.ratings,
     params?.orderDateBy,
     pagination,
@@ -215,31 +242,58 @@ export function useCoursesByCategory(
   const getMoreCourses = useCallback(async () => {
     setIsFetchingMore(true);
     try {
-      const coursesQuery = query(
-        coursesCollection,
-        where("category.id", "==", params.categoryId),
-        orderBy(
-          "averageRatings",
-          params?.ratings === "high_to_low" ? "desc" : "asc"
-        ),
-        orderBy(
-          "updated_at",
-          params?.orderDateBy === "oldest" ? "asc" : "desc"
-        ),
-        startAfter(pagination.lastItem),
-        limit(pagination.limit)
-      );
-      const courseDocsRefs = (await getDocs(coursesQuery)).docs;
-      setPagination((prev) => {
-        return {
-          ...prev,
-          emptied: courseDocsRefs.length < pagination.limit,
-          lastItem: courseDocsRefs[courseDocsRefs.length - 1],
-        };
-      });
-      setCourses((prev) =>
-        [...prev].concat(courseDocsRefs.map((doc) => doc.data()))
-      );
+      if (params.category.id === "all") {
+        const coursesQuery = query(
+          coursesCollection,
+          orderBy(
+            "averageRatings",
+            params?.ratings === "high_to_low" ? "desc" : "asc"
+          ),
+          orderBy(
+            "updated_at",
+            params?.orderDateBy === "oldest" ? "asc" : "desc"
+          ),
+          startAfter(pagination.lastItem),
+          limit(pagination.limit)
+        );
+        const courseDocsRefs = (await getDocs(coursesQuery)).docs;
+        setPagination((prev) => {
+          return {
+            ...prev,
+            emptied: courseDocsRefs.length < pagination.limit,
+            lastItem: courseDocsRefs[courseDocsRefs.length - 1],
+          };
+        });
+        setCourses((prev) =>
+          [...prev].concat(courseDocsRefs.map((doc) => doc.data()))
+        );
+      } else {
+        const coursesQuery = query(
+          coursesCollection,
+          where("category.id", "==", params.category.id),
+          orderBy(
+            "averageRatings",
+            params?.ratings === "high_to_low" ? "desc" : "asc"
+          ),
+          orderBy(
+            "updated_at",
+            params?.orderDateBy === "oldest" ? "asc" : "desc"
+          ),
+          startAfter(pagination.lastItem),
+          limit(pagination.limit)
+        );
+        const courseDocsRefs = (await getDocs(coursesQuery)).docs;
+        setPagination((prev) => {
+          return {
+            ...prev,
+            emptied: courseDocsRefs.length < pagination.limit,
+            lastItem: courseDocsRefs[courseDocsRefs.length - 1],
+          };
+        });
+        setCourses((prev) =>
+          [...prev].concat(courseDocsRefs.map((doc) => doc.data()))
+        );
+      }
       setIsFetchingMore(false);
     } catch (e) {
       setIsFetchingMore(false);
@@ -247,7 +301,7 @@ export function useCoursesByCategory(
     }
   }, [
     coursesCollection,
-    params.categoryId,
+    params.category,
     params?.ratings,
     params?.orderDateBy,
     pagination,
@@ -266,7 +320,7 @@ export function useCoursesByCategory(
 
   function handleParamChange(
     key: string,
-    value: string | OrderDateBy | RatingsFilter
+    value: string | OrderDateBy | RatingsFilter | CategoryForFilter
   ) {
     setFieldValue(key, value);
     setIsCalled(false);
