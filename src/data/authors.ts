@@ -42,6 +42,7 @@ export type Author = {
   uid: string;
   name: string;
   displayPicture?: string;
+  description?: string;
   created_at: Timestamp;
   updated_at: Timestamp;
   reference_uid?: string;
