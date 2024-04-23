@@ -265,7 +265,7 @@ export default function Home() {
                 ? [0, 1, 2, 3].map((i) => <SkeletonTitle key={i} />)
                 : categories?.length
                 ? categories.map(({ id, title }) => {
-                    const isSelected = params.categoryId === id;
+                    const isSelected = params.category.id === id;
                     return (
                       <Inline
                         key={id}

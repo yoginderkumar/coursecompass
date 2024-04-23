@@ -18,6 +18,7 @@ import {
 import * as Validator from "yup";
 import {
   FormImageFileField,
+  FormTextArea,
   InputLabel,
   formikOnSubmitWithErrorHandling,
 } from "../components/Form";
@@ -88,6 +89,8 @@ function getSocialTitle(id: Socials): string {
   }
 }
 
+const MAX_AUTHOR_BIO_LENGTH = 500;
+
 function AddAuthorForm({ close }: { close?: () => void }) {
   const addNewAuthor = useAddAuthor();
   return (
@@ -95,6 +98,7 @@ function AddAuthorForm({ close }: { close?: () => void }) {
       initialValues={{
         name: "" as string,
         socials: [] as AuthorSocial[],
+        description: undefined as string | undefined,
         image: undefined as File | undefined,
       }}
       validationSchema={newAuthorValidation}
@@ -117,6 +121,7 @@ function AddAuthorForm({ close }: { close?: () => void }) {
             name: values.name,
             socials: values.socials,
             imageFile: values.image,
+            description: values.description,
           });
           close?.();
           toast.success("Author saved successfully!");
@@ -140,6 +145,15 @@ function AddAuthorForm({ close }: { close?: () => void }) {
                 name="name"
                 required
                 placeholder="Eg. Geeks For Geeks "
+              />
+              <FormTextArea
+                label="Description"
+                name="description"
+                help={`${
+                  MAX_AUTHOR_BIO_LENGTH - (values.description?.length || 0)
+                } Characters left`}
+                maxLength={MAX_AUTHOR_BIO_LENGTH}
+                placeholder="Add short brief about the author."
               />
               {values.socials?.length ? (
                 <Stack as="ul">
@@ -194,7 +208,11 @@ function AddAuthorForm({ close }: { close?: () => void }) {
                           socials[i].value = e.currentTarget.value;
                           setFieldValue("socials", socials);
                         }}
-                        placeholder="Enter course price"
+                        placeholder={
+                          social.id === "email"
+                            ? "Eg. author@gmail.com"
+                            : "Enter a valid url"
+                        }
                       />
                     </Inline>
                   ))}

@@ -51,7 +51,7 @@ export default function DashboardAuthorsPage() {
                     <img
                       src={author.displayPicture}
                       alt={author.name}
-                      className="rounded-full"
+                      className="w-14 h-14 object-contain rounded-full"
                     />
                   ) : (
                     <Text>{getInitials(author.name)}</Text>
