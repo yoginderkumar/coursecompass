@@ -13,9 +13,11 @@ import { useAddCategory } from "../data";
 import { formikOnSubmitWithErrorHandling } from "../components/Form";
 import toast from "react-hot-toast";
 import {
+  ArtificialIntelligenceIcon,
   DesigningIcon,
   IconProps,
   MusicIcon,
+  NetworkAndSecurityIcon,
   SoftwareDevelopmentIcon,
 } from "../components/Icons";
 
@@ -124,6 +126,8 @@ export function CategoryIcon({ id, ...props }: IconProps & { id: string }) {
       return <DesigningIcon {...props} />;
     case "music":
       return <MusicIcon {...props} />;
+    case 'artificial_intelligence': return <ArtificialIntelligenceIcon {...props} />;
+    case 'network_security': return <NetworkAndSecurityIcon {...props} />
     default:
       return null;
   }
