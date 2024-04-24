@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "react-router-dom";
 import { CourseBox, CourseCard } from "../Courses";
 import {
   Box,
@@ -13,7 +14,6 @@ import {
   usePopularCourses,
   useTopCourses,
 } from "../data/courses";
-import { Link, useNavigate } from "react-router-dom";
 import { Stars } from "../common";
 
 import Ratings from "../assets/images/ratings4.png";
@@ -26,14 +26,13 @@ export default function Home() {
   const { isLoading, courses } = useTopCourses();
   const { isLoading: popularCoursesLoading, courses: popularCourses } =
     usePopularCourses();
+  const { isLoading: categoriesLoading, categories } = useCategories();
   const {
     params,
     courses: coursesByCategory,
     isLoading: categoryLoading,
     setFieldValue,
   } = useCoursesByCategory();
-
-  const { isLoading: categoriesLoading, categories } = useCategories();
 
   return (
     <>
@@ -250,6 +249,7 @@ export default function Home() {
                 className="hidden xl:block xl:w-full w-0"
               >
                 <img
+                  alt='Ratings Vector Image'
                   src={Ratings}
                   className="absolute -bottom-[10px] 2xl:-bottom-[80px] h-[280px] 2xl:h-[420px]"
                 />
@@ -264,7 +264,7 @@ export default function Home() {
               {categoriesLoading
                 ? [0, 1, 2, 3].map((i) => <SkeletonTitle key={i} />)
                 : categories?.length
-                ? categories.map(({ id, title }) => {
+                ? [{id: 'all', title: 'All'}].concat(categories).map(({ id, title }) => {
                     const isSelected = params.category.id === id;
                     return (
                       <Inline
@@ -281,8 +281,9 @@ export default function Home() {
                         textAlign="center"
                         alignItems="center"
                         justifyContent="center"
+                        className='min-w-[80px]'
                         onClick={() => {
-                          setFieldValue("categoryId", id);
+                          setFieldValue("category", {id, title});
                         }}
                       >
                         <CategoryIcon id={id} size="6" />
