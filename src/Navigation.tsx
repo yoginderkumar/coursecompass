@@ -1,3 +1,7 @@
+import { useMemo } from "react";
+import { signOut } from "firebase/auth";
+import { useAuth, useUser } from "reactfire";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import config from "./config";
 import {
   Box,
@@ -14,12 +18,10 @@ import {
   MenuItem,
 } from "./components";
 import { ArrowRightIcon, LogoutIcon } from "./components/Icons";
-import { Link, Outlet, useLocation } from "react-router-dom";
+
 import { LoginOrRegisterInModal } from "./Auth";
-import { useAuth, useUser } from "reactfire";
 import { getInitials } from "./utils";
-import { signOut } from "firebase/auth";
-import { useMemo } from "react";
+
 import { USER_PERMISSIONS, checkIfUserCan, useProfile } from "./data";
 import { RequestCourseInModal } from "./Courses";
 
@@ -54,21 +56,23 @@ export function Navigation() {
               justifyContent="end"
               alignItems="center"
             >
-              <Box className="hidden md:block">
-                <RequestCourseInModal>
-                  {({ add }) => (
-                    <Box cursor="pointer" onClick={add}>
-                      <Text
-                        color="textLow"
-                        className="underline underline-offset-2"
-                        fontSize="b3"
-                      >
-                        Request a course?
-                      </Text>
-                    </Box>
-                  )}
-                </RequestCourseInModal>
-              </Box>
+              {user?.uid ? (
+                <Box className="hidden md:block">
+                  <RequestCourseInModal user={user}>
+                    {({ add }) => (
+                      <Box cursor="pointer" onClick={add}>
+                        <Text
+                          color="textLow"
+                          className="underline underline-offset-2"
+                          fontSize="b3"
+                        >
+                          Request a course?
+                        </Text>
+                      </Box>
+                    )}
+                  </RequestCourseInModal>
+                </Box>
+              ) : null}
 
               {!user?.uid ? (
                 <Inline gap="4">

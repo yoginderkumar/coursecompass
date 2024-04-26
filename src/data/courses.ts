@@ -67,6 +67,12 @@ export type Course = {
 export type Request = {
   id: string;
   url: string;
+  user: {
+    uid: string;
+    name: string;
+    email: string;
+    photo?: string | null;
+  };
   created_at: Timestamp;
   updated_at: Timestamp;
 };
@@ -512,15 +518,25 @@ export function useAddNewCourse() {
   );
 }
 
+type RequestPayload = {
+  courseUrl: string;
+  user: {
+    uid: string;
+    name: string;
+    email: string;
+    photo?: string | null;
+  };
+};
 export function useAddRequest() {
   const requestsCollection = useCourseRequestCollection();
   return useCallback(
-    async (courseUrl: string) => {
+    async ({ courseUrl, user }: RequestPayload) => {
       try {
         const docRef = doc(requestsCollection);
         await setDoc(docRef, {
           id: docRef.id,
           url: courseUrl,
+          user,
           updated_at: serverTimestamp(),
           created_at: serverTimestamp(),
         });
