@@ -804,22 +804,37 @@ export function RequestCourseInModal({
   );
 }
 
-const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
-function RequestCourseForm({ close }: { close?: () => void }) {
+const urlRegex =
+  /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+function RequestCourseForm({
+  user,
+  close,
+}: {
+  user: User;
+  close?: () => void;
+}) {
   const addRequest = useAddRequest();
   return (
     <Formik
       initialValues={{ course_url: "" as string }}
       onSubmit={formikOnSubmitWithErrorHandling(async (values) => {
-        await addRequest(values.course_url);
+        await addRequest({
+          courseUrl: values.course_url,
+          user: {
+            uid: user.uid,
+            name: user?.displayName || "",
+            email: user?.email || "",
+            photo: user?.photoURL,
+          },
+        });
         close?.();
         toast.success("We have raised a request for this course!");
       })}
       validationSchema={Validator.object({}).shape({
         course_url: Validator.string()
           .min(10)
-          .max(200)
-          .matches(urlRegex, "Please enter a valid url/course link.")
+          .max(500)
+          .matches(urlRegex, "Please enter a valid url/link for the course!")
           .required(
             "Please enter this course URL that you would want to add on our platform!"
           ),
@@ -836,6 +851,7 @@ function RequestCourseForm({ close }: { close?: () => void }) {
             <FormField
               name="course_url"
               label="Course URL"
+              pattern={`${urlRegex}`}
               placeholder="Eg. https://www.scaler.com/courses/data-structures-and-algorithms/"
               required
             />
